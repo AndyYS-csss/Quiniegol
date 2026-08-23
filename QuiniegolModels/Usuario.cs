@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Collections.Generic;
 
 namespace QuiniegolModels
 {
@@ -16,6 +16,9 @@ namespace QuiniegolModels
         {
             this.PaisPreferido = paisPreferido;
             this.Puntos = puntos;
+            this.Pronosticos = new List<Pronostico>();
+            this.Quinielas = new List<Quiniela>();
+            this.Insignias = new List<Insignia>();
         }
 
         /// <summary>
@@ -27,5 +30,20 @@ namespace QuiniegolModels
         /// Obtiene o establece los puntos acumulados.
         /// </summary>
         public int Puntos { get; set; }
+
+        /// <summary>
+        /// Obtiene los pronósticos realizados por el usuario.
+        /// </summary>
+        public List<Pronostico> Pronosticos { get; set; }
+
+        /// <summary>
+        /// Obtiene las quinielas a las que pertenece el usuario.
+        /// </summary>
+        public List<Quiniela> Quinielas { get; set; }
+
+        /// <summary>
+        /// Obtiene las insignias obtenidas por el usuario.
+        /// </summary>
+        public List<Insignia> Insignias { get; set; }
     }
 }
