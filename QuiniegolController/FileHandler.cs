@@ -1,4 +1,5 @@
 ﻿using QuiniegolController.Abstractions;
+using QuiniegolModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,8 +31,45 @@ namespace QuiniegolController
             for (var i = 1; i < lines.Length; i++)
             {
                 var lineElement = lines[i].Split(',');
-                var newElement = Activator.CreateInstance(typeof(T), lineElement);
-                data.Add((T)newElement);
+
+                if (typeof(T) == typeof(Partido))
+                {
+                    var local = new Seleccion(
+                        lineElement[0],
+                        lineElement[1]);
+
+                    var visitante = new Seleccion(
+                        lineElement[2],
+                        lineElement[3]);
+
+                    var fecha = DateTime.Parse(lineElement[4]);
+
+                    var partido = new Partido(
+                        local,
+                        visitante,
+                        fecha);
+
+                    data.Add((T)(object)partido);
+                }
+                else
+                {
+                    var constructor = typeof(T).GetConstructors()[0];
+                    var parameters = constructor.GetParameters();
+                    var arguments = new object[parameters.Length];
+
+                    for (var j = 0; j < parameters.Length; j++)
+                    {
+                        arguments[j] = Convert.ChangeType(
+                            lineElement[j],
+                            parameters[j].ParameterType);
+                    }
+
+                    var newElement = Activator.CreateInstance(
+                        typeof(T),
+                        arguments);
+
+                    data.Add((T)newElement);
+                }
             }
 
             return data;
@@ -40,9 +78,6 @@ namespace QuiniegolController
         /// <summary>
         /// Actualiza un elemento en el archivo.
         /// </summary>
-        /// <param name="fileName">Nombre del archivo.</param>
-        /// <param name="element">Elemento que se actualizará.</param>
-        /// <returns>True si se actualizó correctamente.</returns>
         public bool Update(string fileName, T element)
         {
             return false;
@@ -51,9 +86,6 @@ namespace QuiniegolController
         /// <summary>
         /// Elimina un elemento del archivo.
         /// </summary>
-        /// <param name="fileName">Nombre del archivo.</param>
-        /// <param name="element">Elemento que se eliminará.</param>
-        /// <returns>True si se eliminó correctamente.</returns>
         public bool Remove(string fileName, T element)
         {
             return false;
@@ -62,9 +94,6 @@ namespace QuiniegolController
         /// <summary>
         /// Crea un elemento en el archivo.
         /// </summary>
-        /// <param name="fileName">Nombre del archivo.</param>
-        /// <param name="element">Elemento que se creará.</param>
-        /// <returns>True si se creó correctamente.</returns>
         public bool Create(string fileName, T element)
         {
             return false;

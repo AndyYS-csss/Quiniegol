@@ -43,8 +43,11 @@
   <ItemGroup>
     <Compile Include="Abstractions\IDataHandler.cs" />
     <Compile Include="FileHandler.cs" />
+    <Compile Include="NotificacionController.cs" />
     <Compile Include="PartidoController.cs" />
+    <Compile Include="PronosticoController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QuinielaController.cs" />
     <Compile Include="UsuarioController.cs" />
   </ItemGroup>
   <ItemGroup>
