@@ -3,7 +3,6 @@ using QuiniegolController;
 using QuiniegolModels;
 using System;
 using System.IO;
-using System.Linq;
 
 namespace QuiniegolTests
 {
@@ -75,7 +74,8 @@ namespace QuiniegolTests
 
             controller.Load(archivoPrueba);
 
-            var usuario = controller.FindUser("UsuarioInexistente");
+            var usuario =
+                controller.FindUser("UsuarioInexistente");
 
             Assert.IsNull(usuario);
         }
@@ -149,7 +149,8 @@ namespace QuiniegolTests
 
             Assert.IsTrue(resultado);
 
-            var usuario = controller.FindUser("Carlos");
+            var usuario =
+                controller.FindUser("Carlos");
 
             Assert.IsNotNull(usuario);
             Assert.AreEqual(500, usuario.Puntos);
@@ -168,6 +169,38 @@ namespace QuiniegolTests
                 500);
 
             Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void RegisterUser_DebePermitirUsuarioAdicional()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.RegisterUser(
+                archivoPrueba,
+                "Usuario Nuevo",
+                "Costa Rica");
+
+            Assert.IsTrue(resultado);
+
+            var usuario =
+                controller.FindUser("Usuario Nuevo");
+
+            Assert.IsNotNull(usuario);
+            Assert.AreEqual(
+                "Usuario Nuevo",
+                usuario.Nombre);
+
+            Assert.AreEqual(
+                "Costa Rica",
+                usuario.PaisPreferido);
+
+            Assert.AreEqual(
+                0,
+                usuario.Puntos);
         }
     }
 }

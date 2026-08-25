@@ -227,6 +227,27 @@ namespace QuiniegolController
                 return true;
             }
 
+            // ==========================================
+            // CREAR QUINIELA
+            // ==========================================
+
+            if (typeof(T) == typeof(Quiniela))
+            {
+                var quiniela =
+                    (Quiniela)(object)element;
+
+                var linea = string.Format(
+                    "{0},{1}",
+                    quiniela.Nombre,
+                    quiniela.EsPrivada);
+
+                File.AppendAllText(
+                    fileName,
+                    Environment.NewLine + linea);
+
+                return true;
+            }
+
             return false;
         }
     }
