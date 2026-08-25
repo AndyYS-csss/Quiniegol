@@ -136,7 +136,114 @@ namespace QuiniegolController
             string fileName,
             T element)
         {
-            return false;
+            if (string.IsNullOrEmpty(fileName) ||
+                element == null ||
+                !File.Exists(fileName))
+            {
+                return false;
+            }
+
+            var lines = File.ReadAllLines(fileName);
+
+            if (lines.Length == 0)
+            {
+                return false;
+            }
+
+            bool actualizado = false;
+
+            // ==========================================
+            // ACTUALIZAR USUARIO
+            // ==========================================
+
+            if (typeof(T) == typeof(Usuario))
+            {
+                var usuario =
+                    (Usuario)(object)element;
+
+                for (var i = 1; i < lines.Length; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        continue;
+                    }
+
+                    var campos =
+                        lines[i].Split(',');
+
+                    if (campos.Length < 3)
+                    {
+                        continue;
+                    }
+
+                    if (campos[0] == usuario.Nombre)
+                    {
+                        lines[i] = string.Format(
+                            "{0},{1},{2}",
+                            usuario.Nombre,
+                            usuario.PaisPreferido,
+                            usuario.Puntos);
+
+                        actualizado = true;
+                        break;
+                    }
+                }
+            }
+
+            // ==========================================
+            // ACTUALIZAR PRONÓSTICO
+            // ==========================================
+
+            else if (typeof(T) == typeof(Pronostico))
+            {
+                var pronostico =
+                    (Pronostico)(object)element;
+
+                for (var i = 1; i < lines.Length; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        continue;
+                    }
+
+                    var campos =
+                        lines[i].Split(',');
+
+                    if (campos.Length < 6)
+                    {
+                        continue;
+                    }
+
+                    bool mismoPronostico =
+                        campos[0] == pronostico.NombreUsuario &&
+                        campos[1] == pronostico.Local &&
+                        campos[2] == pronostico.Visitante;
+
+                    if (mismoPronostico)
+                    {
+                        lines[i] = string.Format(
+                            "{0},{1},{2},{3},{4},{5}",
+                            pronostico.NombreUsuario,
+                            pronostico.Local,
+                            pronostico.Visitante,
+                            pronostico.GolesLocal,
+                            pronostico.GolesVisitante,
+                            pronostico.Puntos);
+
+                        actualizado = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!actualizado)
+            {
+                return false;
+            }
+
+            File.WriteAllLines(fileName, lines);
+
+            return true;
         }
 
         /// <summary>

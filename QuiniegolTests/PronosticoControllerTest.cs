@@ -270,5 +270,83 @@ namespace QuiniegolTests
 
             Assert.IsFalse(resultado);
         }
+
+        [TestMethod]
+        public void UpdatePoints_DebeActualizarLosPuntos()
+        {
+            var dataHandler =
+                new FileHandler<Pronostico>();
+
+            var controller =
+                new PronosticoController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.UpdatePoints(
+                    archivoPrueba,
+                    "Carlos",
+                    "Costa Rica",
+                    "Brasil",
+                    5);
+
+            Assert.IsTrue(resultado);
+
+            var pronostico =
+                controller.FindPronostico(
+                    "Carlos",
+                    "Costa Rica",
+                    "Brasil");
+
+            Assert.IsNotNull(pronostico);
+
+            Assert.AreEqual(
+                5,
+                pronostico.Puntos);
+        }
+
+        [TestMethod]
+        public void UpdatePoints_NoDebeActualizarSiPronosticoNoExiste()
+        {
+            var dataHandler =
+                new FileHandler<Pronostico>();
+
+            var controller =
+                new PronosticoController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.UpdatePoints(
+                    archivoPrueba,
+                    "UsuarioInexistente",
+                    "Costa Rica",
+                    "Brasil",
+                    5);
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void UpdatePoints_NoDebeAceptarPuntosNegativos()
+        {
+            var dataHandler =
+                new FileHandler<Pronostico>();
+
+            var controller =
+                new PronosticoController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.UpdatePoints(
+                    archivoPrueba,
+                    "Carlos",
+                    "Costa Rica",
+                    "Brasil",
+                    -5);
+
+            Assert.IsFalse(resultado);
+        }
     }
 }
