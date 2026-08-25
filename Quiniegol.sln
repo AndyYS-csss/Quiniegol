@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuiniegolModels", "Quiniego
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuiniegolController", "QuiniegolController\QuiniegolController.csproj", "{2EF58BC8-311D-4EED-AD67-59DCDF15BAA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuiniegolTests", "QuiniegolTests\QuiniegolTests.csproj", "{7D3D16FC-3461-49CD-AF07-39DB92127D6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{2EF58BC8-311D-4EED-AD67-59DCDF15BAA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2EF58BC8-311D-4EED-AD67-59DCDF15BAA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2EF58BC8-311D-4EED-AD67-59DCDF15BAA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D3D16FC-3461-49CD-AF07-39DB92127D6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D3D16FC-3461-49CD-AF07-39DB92127D6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D3D16FC-3461-49CD-AF07-39DB92127D6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D3D16FC-3461-49CD-AF07-39DB92127D6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
