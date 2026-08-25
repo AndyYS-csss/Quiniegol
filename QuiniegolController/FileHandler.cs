@@ -9,15 +9,21 @@ namespace QuiniegolController
     /// <summary>
     /// Maneja las operaciones de datos utilizando archivos.
     /// </summary>
-    /// <typeparam name="T">Tipo de dato que se va a manejar.</typeparam>
+    /// <typeparam name="T">
+    /// Tipo de dato que se va a manejar.
+    /// </typeparam>
     public class FileHandler<T> : IDataHandler<T>
         where T : class
     {
         /// <summary>
         /// Carga los elementos desde el archivo.
         /// </summary>
-        /// <param name="fileName">Nombre del archivo.</param>
-        /// <returns>Lista de elementos.</returns>
+        /// <param name="fileName">
+        /// Nombre del archivo.
+        /// </param>
+        /// <returns>
+        /// Lista de elementos.
+        /// </returns>
         public List<T> Load(string fileName)
         {
             if (string.IsNullOrEmpty(fileName) ||
@@ -81,6 +87,27 @@ namespace QuiniegolController
                         int.Parse(lineElement[5]);
 
                     data.Add((T)(object)pronostico);
+                }
+
+                // ==========================================
+                // CARGAR NOTIFICACIONES
+                // ==========================================
+
+                else if (typeof(T) == typeof(Notificacion))
+                {
+                    var mensaje =
+                        lineElement[0];
+
+                    var fecha =
+                        DateTime.Parse(lineElement[1]);
+
+                    var notificacion =
+                        new Notificacion(
+                            mensaje,
+                            fecha);
+
+                    data.Add(
+                        (T)(object)notificacion);
                 }
 
                 // ==========================================
@@ -161,7 +188,9 @@ namespace QuiniegolController
                 var usuario =
                     (Usuario)(object)element;
 
-                for (var i = 1; i < lines.Length; i++)
+                for (var i = 1;
+                     i < lines.Length;
+                     i++)
                 {
                     if (string.IsNullOrWhiteSpace(lines[i]))
                     {
@@ -199,7 +228,9 @@ namespace QuiniegolController
                 var pronostico =
                     (Pronostico)(object)element;
 
-                for (var i = 1; i < lines.Length; i++)
+                for (var i = 1;
+                     i < lines.Length;
+                     i++)
                 {
                     if (string.IsNullOrWhiteSpace(lines[i]))
                     {
@@ -215,9 +246,12 @@ namespace QuiniegolController
                     }
 
                     bool mismoPronostico =
-                        campos[0] == pronostico.NombreUsuario &&
-                        campos[1] == pronostico.Local &&
-                        campos[2] == pronostico.Visitante;
+                        campos[0] ==
+                            pronostico.NombreUsuario &&
+                        campos[1] ==
+                            pronostico.Local &&
+                        campos[2] ==
+                            pronostico.Visitante;
 
                     if (mismoPronostico)
                     {
@@ -236,12 +270,54 @@ namespace QuiniegolController
                 }
             }
 
+            // ==========================================
+            // ACTUALIZAR NOTIFICACIÓN
+            // ==========================================
+
+            else if (typeof(T) == typeof(Notificacion))
+            {
+                var notificacion =
+                    (Notificacion)(object)element;
+
+                for (var i = 1;
+                     i < lines.Length;
+                     i++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        continue;
+                    }
+
+                    var campos =
+                        lines[i].Split(',');
+
+                    if (campos.Length < 2)
+                    {
+                        continue;
+                    }
+
+                    if (campos[0] ==
+                        notificacion.Mensaje)
+                    {
+                        lines[i] = string.Format(
+                            "{0},{1}",
+                            notificacion.Mensaje,
+                            notificacion.Fecha);
+
+                        actualizado = true;
+                        break;
+                    }
+                }
+            }
+
             if (!actualizado)
             {
                 return false;
             }
 
-            File.WriteAllLines(fileName, lines);
+            File.WriteAllLines(
+                fileName,
+                lines);
 
             return true;
         }
@@ -347,6 +423,27 @@ namespace QuiniegolController
                     "{0},{1}",
                     quiniela.Nombre,
                     quiniela.EsPrivada);
+
+                File.AppendAllText(
+                    fileName,
+                    Environment.NewLine + linea);
+
+                return true;
+            }
+
+            // ==========================================
+            // CREAR NOTIFICACIÓN
+            // ==========================================
+
+            if (typeof(T) == typeof(Notificacion))
+            {
+                var notificacion =
+                    (Notificacion)(object)element;
+
+                var linea = string.Format(
+                    "{0},{1}",
+                    notificacion.Mensaje,
+                    notificacion.Fecha);
 
                 File.AppendAllText(
                     fileName,
