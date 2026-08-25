@@ -20,7 +20,8 @@ namespace QuiniegolController
         /// Inicializa una nueva instancia de la clase QuinielaController.
         /// </summary>
         /// <param name="dataHandler">Manejador de datos.</param>
-        public QuinielaController(IDataHandler<Quiniela> dataHandler)
+        public QuinielaController(
+            IDataHandler<Quiniela> dataHandler)
         {
             DataHandler = dataHandler;
             Quinielas = new List<Quiniela>();
@@ -35,7 +36,7 @@ namespace QuiniegolController
         {
             var quinielas = this.DataHandler.Load(fileName);
 
-            if (quinielas != null && quinielas.Count > 0)
+            if (quinielas != null)
             {
                 this.Quinielas = quinielas;
                 return quinielas;
@@ -51,13 +52,14 @@ namespace QuiniegolController
         /// <returns>Quiniela encontrada o null.</returns>
         public Quiniela FindQuiniela(string nombre)
         {
-            if (this.Quinielas != null && this.Quinielas.Count > 0)
+            if (this.Quinielas == null ||
+                this.Quinielas.Count == 0)
             {
-                return this.Quinielas.Find(
-                    quiniela => quiniela.Nombre == nombre);
+                return null;
             }
 
-            return null;
+            return this.Quinielas.Find(
+                quiniela => quiniela.Nombre == nombre);
         }
     }
 }

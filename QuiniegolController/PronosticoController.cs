@@ -25,6 +25,7 @@ namespace QuiniegolController
             DataHandler = dataHandler;
             Pronosticos = new List<Pronostico>();
         }
+
         /// <summary>
         /// Carga los pronósticos desde el archivo indicado.
         /// </summary>
@@ -41,6 +42,30 @@ namespace QuiniegolController
             }
 
             return new List<Pronostico>();
+        }
+
+        /// <summary>
+        /// Busca un pronóstico de un usuario para un partido.
+        /// </summary>
+        /// <param name="nombreUsuario">Nombre del usuario.</param>
+        /// <param name="local">Nombre de la selección local.</param>
+        /// <param name="visitante">Nombre de la selección visitante.</param>
+        /// <returns>Pronóstico encontrado o null.</returns>
+        public Pronostico FindPronostico(
+            string nombreUsuario,
+            string local,
+            string visitante)
+        {
+            if (this.Pronosticos != null && this.Pronosticos.Count > 0)
+            {
+                return this.Pronosticos.Find(
+                    pronostico =>
+                        pronostico.NombreUsuario == nombreUsuario &&
+                        pronostico.Local == local &&
+                        pronostico.Visitante == visitante);
+            }
+
+            return null;
         }
     }
 }

@@ -24,8 +24,8 @@ namespace QuiniegolController
         {
             DataHandler = dataHandler;
             Partidos = new List<Partido>();
-     
         }
+
         /// <summary>
         /// Carga los partidos desde el archivo indicado.
         /// </summary>
@@ -35,7 +35,7 @@ namespace QuiniegolController
         {
             var partidos = this.DataHandler.Load(fileName);
 
-            if (partidos != null && partidos.Count > 0)
+            if (partidos != null)
             {
                 this.Partidos = partidos;
                 return partidos;
@@ -43,23 +43,28 @@ namespace QuiniegolController
 
             return new List<Partido>();
         }
+
         /// <summary>
         /// Busca un partido por los nombres de las selecciones.
         /// </summary>
         /// <param name="local">Nombre de la selección local.</param>
         /// <param name="visitante">Nombre de la selección visitante.</param>
         /// <returns>Partido encontrado o null.</returns>
-        public Partido FindMatch(string local, string visitante)
+        public Partido FindMatch(
+            string local,
+            string visitante)
         {
-            if (this.Partidos != null && this.Partidos.Count > 0)
+            if (this.Partidos == null || this.Partidos.Count == 0)
             {
-                return this.Partidos.Find(
-                    partido => partido.Local.Nombre == local &&
-                               partido.Visitante.Nombre == visitante);
+                return null;
             }
 
-            return null;
+            return this.Partidos.Find(
+                partido =>
+                    partido.Local.Nombre == local &&
+                    partido.Visitante.Nombre == visitante);
         }
+
         /// <summary>
         /// Actualiza el resultado de un partido.
         /// </summary>
@@ -67,13 +72,21 @@ namespace QuiniegolController
         /// <param name="visitante">Nombre de la selección visitante.</param>
         /// <param name="golesLocal">Goles del equipo local.</param>
         /// <param name="golesVisitante">Goles del equipo visitante.</param>
-        /// <returns>True si el resultado fue actualizado; de lo contrario, false.</returns>
+        /// <returns>
+        /// True si el resultado fue actualizado;
+        /// de lo contrario, false.
+        /// </returns>
         public bool UpdateResult(
             string local,
             string visitante,
             int golesLocal,
             int golesVisitante)
         {
+            if (golesLocal < 0 || golesVisitante < 0)
+            {
+                return false;
+            }
+
             var partido = this.FindMatch(local, visitante);
 
             if (partido == null)

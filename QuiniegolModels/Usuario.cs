@@ -10,16 +10,23 @@ namespace QuiniegolModels
         /// <summary>
         /// Inicializa una nueva instancia de la clase Usuario.
         /// </summary>
+        /// <param name="nombre">Nombre completo del usuario.</param>
         /// <param name="paisPreferido">País preferido del usuario.</param>
         /// <param name="puntos">Puntos acumulados por el usuario.</param>
-        public Usuario(string paisPreferido, int puntos)
+        public Usuario(string nombre, string paisPreferido, int puntos)
         {
+            this.Nombre = nombre;
             this.PaisPreferido = paisPreferido;
             this.Puntos = puntos;
             this.Pronosticos = new List<Pronostico>();
             this.Quinielas = new List<Quiniela>();
             this.Insignias = new List<Insignia>();
         }
+
+        /// <summary>
+        /// Obtiene o establece el nombre completo del usuario.
+        /// </summary>
+        public string Nombre { get; set; }
 
         /// <summary>
         /// Obtiene o establece el país preferido.

@@ -20,7 +20,8 @@ namespace QuiniegolController
         /// Inicializa una nueva instancia de la clase NotificacionController.
         /// </summary>
         /// <param name="dataHandler">Manejador de datos.</param>
-        public NotificacionController(IDataHandler<Notificacion> dataHandler)
+        public NotificacionController(
+            IDataHandler<Notificacion> dataHandler)
         {
             DataHandler = dataHandler;
             Notificaciones = new List<Notificacion>();
@@ -35,7 +36,7 @@ namespace QuiniegolController
         {
             var notificaciones = this.DataHandler.Load(fileName);
 
-            if (notificaciones != null && notificaciones.Count > 0)
+            if (notificaciones != null)
             {
                 this.Notificaciones = notificaciones;
                 return notificaciones;
@@ -51,13 +52,14 @@ namespace QuiniegolController
         /// <returns>Notificación encontrada o null.</returns>
         public Notificacion FindNotification(string mensaje)
         {
-            if (this.Notificaciones != null && this.Notificaciones.Count > 0)
+            if (this.Notificaciones == null ||
+                this.Notificaciones.Count == 0)
             {
-                return this.Notificaciones.Find(
-                    notificacion => notificacion.Mensaje == mensaje);
+                return null;
             }
 
-            return null;
+            return this.Notificaciones.Find(
+                notificacion => notificacion.Mensaje == mensaje);
         }
     }
 }

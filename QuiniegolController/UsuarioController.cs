@@ -12,18 +12,19 @@ namespace QuiniegolController
         private IDataHandler<Usuario> DataHandler { get; set; }
 
         /// <summary>
+        /// Obtiene los usuarios cargados.
+        /// </summary>
+        public List<Usuario> Usuarios { get; private set; }
+
+        /// <summary>
         /// Inicializa una nueva instancia de la clase UsuarioController.
         /// </summary>
         /// <param name="dataHandler">Manejador de datos.</param>
         public UsuarioController(IDataHandler<Usuario> dataHandler)
         {
             DataHandler = dataHandler;
+            Usuarios = new List<Usuario>();
         }
-
-        /// <summary>
-        /// Obtiene los usuarios cargados.
-        /// </summary>
-        public List<Usuario> Usuarios { get; private set; }
 
         /// <summary>
         /// Carga los usuarios desde el archivo indicado.
@@ -34,7 +35,7 @@ namespace QuiniegolController
         {
             var usuarios = this.DataHandler.Load(fileName);
 
-            if (usuarios != null && usuarios.Count > 0)
+            if (usuarios != null)
             {
                 this.Usuarios = usuarios;
                 return usuarios;
@@ -44,30 +45,72 @@ namespace QuiniegolController
         }
 
         /// <summary>
-        /// Busca un usuario por su país preferido.
+        /// Busca un usuario por su nombre.
         /// </summary>
-        /// <param name="paisPreferido">País preferido.</param>
+        /// <param name="nombre">Nombre del usuario.</param>
         /// <returns>Usuario encontrado o null.</returns>
-        public Usuario FindUser(string paisPreferido)
+        public Usuario FindUser(string nombre)
         {
             if (this.Usuarios != null && this.Usuarios.Count > 0)
             {
                 return this.Usuarios.Find(
-                    usuario => usuario.PaisPreferido == paisPreferido);
+                    usuario => usuario.Nombre == nombre);
             }
 
             return null;
         }
 
         /// <summary>
+        /// Registra un nuevo usuario.
+        /// </summary>
+        /// <param name="fileName">Archivo donde se guardará el usuario.</param>
+        /// <param name="nombre">Nombre completo del usuario.</param>
+        /// <param name="paisPreferido">País preferido.</param>
+        /// <returns>True si el usuario fue registrado correctamente.</returns>
+        public bool RegisterUser(
+            string fileName,
+            string nombre,
+            string paisPreferido)
+        {
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(paisPreferido))
+            {
+                return false;
+            }
+
+            if (this.FindUser(nombre) != null)
+            {
+                return false;
+            }
+
+            var usuario = new Usuario(
+                nombre,
+                paisPreferido,
+                0);
+
+            var created = this.DataHandler.Create(
+                fileName,
+                usuario);
+
+            if (!created)
+            {
+                return false;
+            }
+
+            this.Usuarios.Add(usuario);
+
+            return true;
+        }
+
+        /// <summary>
         /// Actualiza los puntos de un usuario.
         /// </summary>
-        /// <param name="paisPreferido">País preferido del usuario.</param>
+        /// <param name="nombre">Nombre del usuario.</param>
         /// <param name="puntos">Nueva cantidad de puntos.</param>
         /// <returns>True si se actualizó; de lo contrario, false.</returns>
-        public bool UpdatePoints(string paisPreferido, int puntos)
+        public bool UpdatePoints(string nombre, int puntos)
         {
-            var usuario = this.FindUser(paisPreferido);
+            var usuario = this.FindUser(nombre);
 
             if (usuario == null)
             {
@@ -75,6 +118,7 @@ namespace QuiniegolController
             }
 
             usuario.Puntos = puntos;
+
             return true;
         }
     }
