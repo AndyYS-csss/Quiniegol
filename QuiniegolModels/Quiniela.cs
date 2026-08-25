@@ -10,9 +10,15 @@ namespace QuiniegolModels
         /// <summary>
         /// Inicializa una nueva instancia de la clase Quiniela.
         /// </summary>
-        /// <param name="nombre">Nombre de la quiniela.</param>
-        /// <param name="esPrivada">Indica si la quiniela es privada.</param>
-        public Quiniela(string nombre, bool esPrivada)
+        /// <param name="nombre">
+        /// Nombre de la quiniela.
+        /// </param>
+        /// <param name="esPrivada">
+        /// Indica si la quiniela es privada.
+        /// </param>
+        public Quiniela(
+            string nombre,
+            bool esPrivada)
         {
             this.Nombre = nombre;
             this.EsPrivada = esPrivada;
@@ -31,7 +37,8 @@ namespace QuiniegolModels
         public bool EsPrivada { get; set; }
 
         /// <summary>
-        /// Obtiene los usuarios que pertenecen a la quiniela.
+        /// Obtiene los usuarios que pertenecen
+        /// a la quiniela.
         /// </summary>
         public List<Usuario> Integrantes { get; set; }
 
