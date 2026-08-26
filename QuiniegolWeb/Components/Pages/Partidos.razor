@@ -1,0 +1,535 @@
+﻿@page "/partidos"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolWeb.Services
+@using QuiniegolController
+@using System.IO
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Mantenimiento de Partidos - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1>Mantenimiento de Partidos</h1>
+
+            @if (Session.UsuarioActual is not null)
+            {
+                <p class="text-muted">
+                    Administrador: @Session.UsuarioActual.Nombre
+                </p>
+            }
+        </div>
+
+        <div>
+
+            <button class="btn btn-secondary me-2"
+                    @onclick="VolverAlPanel">
+                Volver al panel
+            </button>
+
+            <button class="btn btn-danger"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+
+        </div>
+
+    </div>
+
+    <hr />
+
+    @if (!autorizado)
+    {
+        <div class="alert alert-warning">
+            Verificando sesión...
+        </div>
+    }
+    else
+    {
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <h3>Partidos registrados</h3>
+
+                        <p class="text-muted mb-0">
+                            Desde esta pantalla el administrador puede
+                            consultar y administrar los partidos registrados
+                            en el sistema.
+                        </p>
+                    </div>
+
+                    <div>
+
+                        <span class="badge bg-primary me-2">
+                            @partidos.Count partidos
+                        </span>
+
+                        <button class="btn btn-primary"
+                                @onclick="MostrarFormulario">
+                            Agregar partido
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                @if (mensaje != string.Empty)
+                {
+                    <div class="alert @(esError ? "alert-danger" : "alert-success")">
+                        @mensaje
+                    </div>
+                }
+
+
+                @if (mostrarFormulario)
+                {
+                    <div class="card mb-4">
+
+                        <div class="card-body">
+
+                            <h4>Agregar partido</h4>
+
+                            <hr />
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Equipo local
+                                    </label>
+
+                                    <input class="form-control"
+                                           @bind="nuevoLocal"
+                                           placeholder="Ejemplo: Costa Rica" />
+
+                                </div>
+
+
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Grupo local
+                                    </label>
+
+                                    <input class="form-control"
+                                           @bind="nuevoGrupoLocal"
+                                           placeholder="Ejemplo: A" />
+
+                                </div>
+
+
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Equipo visitante
+                                    </label>
+
+                                    <input class="form-control"
+                                           @bind="nuevoVisitante"
+                                           placeholder="Ejemplo: Brasil" />
+
+                                </div>
+
+
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Grupo visitante
+                                    </label>
+
+                                    <input class="form-control"
+                                           @bind="nuevoGrupoVisitante"
+                                           placeholder="Ejemplo: A" />
+
+                                </div>
+
+
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Fecha y hora
+                                    </label>
+
+                                    <input type="datetime-local"
+                                           class="form-control"
+                                           @bind="nuevaFecha" />
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="mt-2">
+
+                                <button class="btn btn-success me-2"
+                                        @onclick="AgregarPartido">
+                                    Guardar partido
+                                </button>
+
+                                <button class="btn btn-secondary"
+                                        @onclick="CancelarFormulario">
+                                    Cancelar
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+
+                @if (partidos.Count == 0)
+                {
+                    <div class="alert alert-info">
+                        No se encontraron partidos registrados.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered table-hover">
+
+                            <thead class="table-dark">
+
+                                <tr>
+                                    <th>Local</th>
+                                    <th>Grupo</th>
+                                    <th>Visitante</th>
+                                    <th>Grupo</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var partido in partidos)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @partido.Local.Nombre
+                                        </td>
+
+                                        <td>
+                                            @partido.Local.Grupo
+                                        </td>
+
+                                        <td>
+                                            @partido.Visitante.Nombre
+                                        </td>
+
+                                        <td>
+                                            @partido.Visitante.Grupo
+                                        </td>
+
+                                        <td>
+                                            @partido.Fecha.ToString("dd/MM/yyyy HH:mm")
+                                        </td>
+
+                                        <td>
+
+                                            @if (partido.Finalizado)
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    Finalizado
+                                                </span>
+                                            }
+                                            else if (partido.Fecha <= DateTime.Now)
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    En curso
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">
+                                                    Programado
+                                                </span>
+                                            }
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    private bool autorizado = false;
+
+    private List<Partido> partidos = new();
+
+    private PartidoController? partidoController;
+
+    private string mensaje = string.Empty;
+
+    private bool esError = false;
+
+    private bool mostrarFormulario = false;
+
+
+    // Datos del nuevo partido.
+    private string nuevoLocal = string.Empty;
+
+    private string nuevoGrupoLocal = string.Empty;
+
+    private string nuevoVisitante = string.Empty;
+
+    private string nuevoGrupoVisitante = string.Empty;
+
+    private DateTime nuevaFecha = DateTime.Now.AddDays(1);
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        // Verificamos que exista una sesión activa.
+        if (Session.UsuarioActual is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Verificamos que el usuario sea administrador.
+        if (Session.UsuarioActual.Rol != "Administrador")
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        autorizado = true;
+
+        CargarPartidos();
+
+        StateHasChanged();
+    }
+
+
+    private void CargarPartidos()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        try
+        {
+            // Creamos el manejador de archivos.
+            var dataHandler = new FileHandler<Partido>();
+
+            // Creamos el controlador de partidos.
+            partidoController = new PartidoController(dataHandler);
+
+            // Ubicamos el archivo Partidos.csv.
+            var archivoPartidos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv"
+            );
+
+            // Cargamos los partidos.
+            partidos = partidoController.Load(archivoPartidos);
+
+            if (partidos == null)
+            {
+                partidos = new List<Partido>();
+            }
+        }
+        catch (Exception ex)
+        {
+            partidos = new List<Partido>();
+
+            mensaje = "No fue posible cargar los partidos: " + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // Mostrar el formulario para agregar un partido.
+    private void MostrarFormulario()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        nuevoLocal = string.Empty;
+        nuevoGrupoLocal = string.Empty;
+        nuevoVisitante = string.Empty;
+        nuevoGrupoVisitante = string.Empty;
+        nuevaFecha = DateTime.Now.AddDays(1);
+
+        mostrarFormulario = true;
+    }
+
+
+    // Cancelar el formulario.
+    private void CancelarFormulario()
+    {
+        mostrarFormulario = false;
+
+        mensaje = string.Empty;
+        esError = false;
+    }
+
+
+    // Agregar un nuevo partido.
+    private void AgregarPartido()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        // Validamos el equipo local.
+        if (string.IsNullOrWhiteSpace(nuevoLocal))
+        {
+            mensaje = "Debe indicar el equipo local.";
+            esError = true;
+            return;
+        }
+
+        // Validamos el grupo local.
+        if (string.IsNullOrWhiteSpace(nuevoGrupoLocal))
+        {
+            mensaje = "Debe indicar el grupo local.";
+            esError = true;
+            return;
+        }
+
+        // Validamos el equipo visitante.
+        if (string.IsNullOrWhiteSpace(nuevoVisitante))
+        {
+            mensaje = "Debe indicar el equipo visitante.";
+            esError = true;
+            return;
+        }
+
+        // Validamos el grupo visitante.
+        if (string.IsNullOrWhiteSpace(nuevoGrupoVisitante))
+        {
+            mensaje = "Debe indicar el grupo visitante.";
+            esError = true;
+            return;
+        }
+
+        // Validamos que no sea el mismo equipo.
+        if (nuevoLocal.Trim().Equals(
+            nuevoVisitante.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+        {
+            mensaje = "El equipo local y visitante no pueden ser iguales.";
+            esError = true;
+            return;
+        }
+
+
+        try
+        {
+            // Ubicamos el archivo Partidos.csv.
+            var archivoPartidos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv"
+            );
+
+            // Creamos el nuevo partido.
+            var nuevoPartido = new Partido(
+                new Seleccion(
+                    nuevoLocal.Trim(),
+                    nuevoGrupoLocal.Trim().ToUpper()
+                ),
+                new Seleccion(
+                    nuevoVisitante.Trim(),
+                    nuevoGrupoVisitante.Trim().ToUpper()
+                ),
+                nuevaFecha
+            );
+
+            // Formato utilizado por Partidos.csv.
+            var linea = string.Join(
+                ",",
+                nuevoPartido.Local.Nombre,
+                nuevoPartido.Local.Grupo,
+                nuevoPartido.Visitante.Nombre,
+                nuevoPartido.Visitante.Grupo,
+                nuevoPartido.Fecha.ToString("yyyy-MM-dd HH:mm:ss")
+            );
+
+            // Agregamos el partido al archivo.
+            File.AppendAllText(
+                archivoPartidos,
+                Environment.NewLine + linea
+            );
+
+            // Actualizamos la lista que se muestra en pantalla.
+            partidos.Add(nuevoPartido);
+
+            mensaje = $"El partido {nuevoLocal} vs {nuevoVisitante} fue agregado correctamente.";
+
+            mostrarFormulario = false;
+        }
+        catch (Exception ex)
+        {
+            mensaje = "No fue posible agregar el partido: " + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // Volver al panel del administrador.
+    private void VolverAlPanel()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+
+    // Cerrar sesión.
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+
+}

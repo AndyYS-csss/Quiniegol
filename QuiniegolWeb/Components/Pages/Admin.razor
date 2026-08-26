@@ -75,7 +75,8 @@
                         los partidos del sistema.
                     </p>
 
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary"
+                            @onclick="GestionarPartidos">
                         Gestionar partidos
                     </button>
 
@@ -223,6 +224,13 @@
     private void GestionarUsuarios()
     {
         Navigation.NavigateTo("/usuarios");
+    }
+
+
+    // Abre la pantalla de Mantenimiento de partidos.
+    private void GestionarPartidos()
+    {
+        Navigation.NavigateTo("/partidos");
     }
 
 
