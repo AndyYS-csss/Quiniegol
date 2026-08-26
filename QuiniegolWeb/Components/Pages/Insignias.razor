@@ -1,0 +1,491 @@
+﻿@page "/insignias"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolController
+@using QuiniegolWeb.Services
+@using System.IO
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Mis insignias - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    @if (!Session.SesionIniciada ||
+        Session.UsuarioActual == null)
+    {
+        <div class="alert alert-warning">
+
+            <h4>Sesión no iniciada</h4>
+
+            <p>
+                Debe iniciar sesión para consultar sus insignias.
+            </p>
+
+            <button class="btn btn-primary"
+                    @onclick="IrAlLogin">
+                Iniciar sesión
+            </button>
+
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+
+                <h1>Mis insignias</h1>
+
+                <p class="text-muted">
+                    Usuario:
+                    <strong>
+                        @Session.UsuarioActual.Nombre
+                    </strong>
+                </p>
+
+            </div>
+
+            <button class="btn btn-secondary"
+                    @onclick="VolverAlDashboard">
+                Volver al dashboard
+            </button>
+
+        </div>
+
+        <hr />
+
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert alert-danger">
+                @mensaje
+            </div>
+        }
+
+        @if (cargando)
+        {
+            <div class="alert alert-info">
+                Cargando insignias...
+            </div>
+        }
+        else if (insignias.Count == 0)
+        {
+            <div class="alert alert-warning">
+
+                <h5>No tienes insignias todavía.</h5>
+
+                <p class="mb-0">
+                    Continúa participando en Quiniegol
+                    para obtener nuevas insignias.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="row">
+
+                @foreach (Insignia insignia in insignias)
+                {
+                    <div class="col-md-6 mb-4">
+
+                        <div class="card h-100">
+
+                            <div class="card-body">
+
+                                <h4 class="card-title">
+                                    @insignia.Nombre
+                                </h4>
+
+                                <p class="card-text">
+                                    @insignia.Descripcion
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    }
+
+</div>
+
+
+@code {
+
+    private List<Insignia> insignias =
+        new List<Insignia>();
+
+    private bool cargando = true;
+
+    private string mensaje =
+        string.Empty;
+
+
+    protected override void OnInitialized()
+    {
+        if (!Session.SesionIniciada ||
+            Session.UsuarioActual == null)
+        {
+            cargando = false;
+            return;
+        }
+
+        CargarInsignias();
+    }
+
+
+    private void CargarInsignias()
+    {
+        cargando = true;
+        mensaje = string.Empty;
+
+        try
+        {
+            // ==========================================
+            // CARGAR USUARIOS
+            // ==========================================
+
+            var usuarioDataHandler =
+                new FileHandler<Usuario>();
+
+            var usuarioController =
+                new UsuarioController(
+                    usuarioDataHandler);
+
+            var archivoUsuarios =
+                Path.Combine(
+                    AppContext.BaseDirectory,
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "Quiniegol",
+                    "Data",
+                    "Usuarios.csv");
+
+            archivoUsuarios =
+                Path.GetFullPath(
+                    archivoUsuarios);
+
+            var usuarios =
+                usuarioController.Load(
+                    archivoUsuarios);
+
+
+            if (usuarios == null ||
+                usuarios.Count == 0)
+            {
+                insignias =
+                    new List<Insignia>();
+
+                mensaje =
+                    "No se encontraron usuarios.";
+
+                return;
+            }
+
+
+            // ==========================================
+            // CARGAR PRONÓSTICOS
+            // ==========================================
+
+            var pronosticoDataHandler =
+                new FileHandler<Pronostico>();
+
+            var pronosticoController =
+                new PronosticoController(
+                    pronosticoDataHandler);
+
+            var archivoPronosticos =
+                Path.Combine(
+                    AppContext.BaseDirectory,
+                    "..",
+                    "..",
+                    "..",
+                    "..",
+                    "Quiniegol",
+                    "Data",
+                    "Pronosticos.csv");
+
+            archivoPronosticos =
+                Path.GetFullPath(
+                    archivoPronosticos);
+
+            var pronosticos =
+                pronosticoController.Load(
+                    archivoPronosticos);
+
+
+            // ==========================================
+            // ASOCIAR PRONÓSTICOS A LOS USUARIOS
+            // ==========================================
+
+            foreach (Usuario usuario in usuarios)
+            {
+                usuario.Pronosticos =
+                    pronosticos
+                        .FindAll(pronostico =>
+                            pronostico != null &&
+                            pronostico.NombreUsuario ==
+                            usuario.Nombre);
+            }
+
+
+            // ==========================================
+            // BUSCAR PRIMERO DEL RANKING GLOBAL
+            // ==========================================
+
+            Usuario primero =
+                usuarios
+                    .OrderByDescending(
+                        usuario => usuario.Puntos)
+                    .ThenBy(
+                        usuario => usuario.Nombre)
+                    .First();
+
+
+            AgregarInsignia(
+                primero,
+                "Primero del ranking global",
+                "Usuario con mayor cantidad de puntos del ranking global.");
+
+
+            // ==========================================
+            // BUSCAR PEOR DEL RANKING GLOBAL
+            // ==========================================
+
+            Usuario peor =
+                usuarios
+                    .OrderBy(
+                        usuario => usuario.Puntos)
+                    .ThenBy(
+                        usuario => usuario.Nombre)
+                    .First();
+
+
+            AgregarInsignia(
+                peor,
+                "Peor del ranking global",
+                "Usuario con menor cantidad de puntos del ranking global.");
+
+
+            // ==========================================
+            // REY DE LOS EMPATES
+            // ==========================================
+
+            Usuario usuarioEmpates =
+                usuarios
+                    .OrderByDescending(
+                        usuario =>
+                            ContarEmpatesAcertados(usuario))
+                    .ThenBy(
+                        usuario => usuario.Nombre)
+                    .First();
+
+
+            int cantidadEmpates =
+                ContarEmpatesAcertados(
+                    usuarioEmpates);
+
+
+            if (cantidadEmpates > 0)
+            {
+                AgregarInsignia(
+                    usuarioEmpates,
+                    "Rey de los empates",
+                    "Usuario con mayor cantidad de empates acertados.");
+            }
+
+
+            // ==========================================
+            // RACHA DE MÁS DE 10 ACIERTOS
+            // ==========================================
+
+            foreach (Usuario usuario in usuarios)
+            {
+                if (TieneRachaMayorADiez(usuario))
+                {
+                    AgregarInsignia(
+                        usuario,
+                        "Racha de más de 10 aciertos",
+                        "Usuario con una racha de más de 10 aciertos.");
+                }
+            }
+
+
+            // ==========================================
+            // OBTENER USUARIO ACTUAL
+            // ==========================================
+
+            Usuario? usuarioActual =
+                usuarios.Find(
+                    usuario =>
+                        usuario.Nombre ==
+                        Session.UsuarioActual!.Nombre);
+
+
+            if (usuarioActual == null)
+            {
+                insignias =
+                    new List<Insignia>();
+
+                mensaje =
+                    "No se encontró el usuario actual.";
+
+                return;
+            }
+
+
+            // ==========================================
+            // ACTUALIZAR LA SESIÓN
+            // ==========================================
+
+            Session.UsuarioActual.Insignias =
+                usuarioActual.Insignias ??
+                new List<Insignia>();
+
+
+            insignias =
+                Session.UsuarioActual.Insignias;
+        }
+        catch (Exception ex)
+        {
+            insignias =
+                new List<Insignia>();
+
+            mensaje =
+                "No fue posible cargar las insignias: "
+                + ex.Message;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+
+    // ==========================================
+    // CONTAR EMPATES ACERTADOS
+    // ==========================================
+
+    private int ContarEmpatesAcertados(
+        Usuario usuario)
+    {
+        if (usuario == null ||
+            usuario.Pronosticos == null)
+        {
+            return 0;
+        }
+
+        return usuario.Pronosticos.Count(
+            pronostico =>
+                pronostico != null &&
+                pronostico.Puntos > 0 &&
+                pronostico.GolesLocal ==
+                pronostico.GolesVisitante);
+    }
+
+
+    // ==========================================
+    // COMPROBAR RACHA
+    // ==========================================
+
+    private bool TieneRachaMayorADiez(
+        Usuario usuario)
+    {
+        if (usuario == null ||
+            usuario.Pronosticos == null ||
+            usuario.Pronosticos.Count == 0)
+        {
+            return false;
+        }
+
+        int rachaActual = 0;
+
+        foreach (Pronostico pronostico
+            in usuario.Pronosticos)
+        {
+            if (pronostico != null &&
+                pronostico.Puntos > 0)
+            {
+                rachaActual++;
+
+                if (rachaActual > 10)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                rachaActual = 0;
+            }
+        }
+
+        return false;
+    }
+
+
+    // ==========================================
+    // AGREGAR INSIGNIA SIN DUPLICADOS
+    // ==========================================
+
+    private void AgregarInsignia(
+        Usuario usuario,
+        string nombre,
+        string descripcion)
+    {
+        if (usuario == null)
+        {
+            return;
+        }
+
+        if (usuario.Insignias == null)
+        {
+            usuario.Insignias =
+                new List<Insignia>();
+        }
+
+        bool yaExiste =
+            usuario.Insignias.Any(
+                insignia =>
+                    insignia != null &&
+                    insignia.Nombre == nombre);
+
+        if (yaExiste)
+        {
+            return;
+        }
+
+        usuario.Insignias.Add(
+            new Insignia(
+                nombre,
+                descripcion));
+    }
+
+
+    // ==========================================
+    // NAVEGACIÓN
+    // ==========================================
+
+    private void VolverAlDashboard()
+    {
+        Navigation.NavigateTo(
+            "/dashboard");
+    }
+
+
+    private void IrAlLogin()
+    {
+        Navigation.NavigateTo(
+            "/login");
+    }
+
+}

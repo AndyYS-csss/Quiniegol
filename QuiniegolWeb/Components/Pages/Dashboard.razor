@@ -187,9 +187,14 @@
 
                 <div class="mt-3">
 
-                    <button class="btn btn-primary"
+                    <button class="btn btn-primary me-2"
                             @onclick="VerReportes">
                         Mis reportes
+                    </button>
+
+                    <button class="btn btn-success"
+                            @onclick="VerInsignias">
+                        Mis insignias
                     </button>
 
                 </div>
@@ -272,10 +277,6 @@
                     archivoPronosticos);
 
 
-            // ==========================================
-            // CARGAR LOS PRONÓSTICOS DEL USUARIO
-            // ==========================================
-
             Session.UsuarioActual.Pronosticos =
                 pronosticos
                     .FindAll(pronostico =>
@@ -315,20 +316,20 @@
 
 
             // ==========================================
-            // OBTENER FECHA/HORA SIMULADA
+            // FECHA/HORA SIMULADA
             // ==========================================
 
             DateTime fechaSistema =
                 Reloj.Instance.CurrentDateTime;
 
 
-            // ==========================================
-            // BUSCAR PARTIDOS DE LAS PRÓXIMAS 24 HORAS
-            // ==========================================
-
             DateTime limite24Horas =
                 fechaSistema.AddHours(24);
 
+
+            // ==========================================
+            // BUSCAR PARTIDOS PENDIENTES
+            // ==========================================
 
             foreach (Partido partido in partidos)
             {
@@ -340,29 +341,24 @@
                 }
 
 
-                // El partido ya comenzó.
                 if (partido.Fecha <= fechaSistema)
                 {
                     continue;
                 }
 
 
-                // El partido está fuera de las próximas 24 horas.
                 if (partido.Fecha > limite24Horas)
                 {
                     continue;
                 }
 
 
-                // El partido ya finalizó.
                 if (partido.Finalizado)
                 {
                     continue;
                 }
 
 
-                // Comprobamos si el usuario ya realizó
-                // un pronóstico para este partido.
                 bool yaPronostico =
                     Session.UsuarioActual.Pronosticos
                         .Exists(pronostico =>
@@ -381,7 +377,6 @@
                 }
 
 
-                // Creamos la notificación.
                 string mensaje =
                     $"Falta realizar el pronóstico del partido " +
                     $"{partido.Local.Nombre} vs " +
@@ -413,6 +408,12 @@
     private void VerReportes()
     {
         Navigation.NavigateTo("/reportes-usuario");
+    }
+
+
+    private void VerInsignias()
+    {
+        Navigation.NavigateTo("/insignias");
     }
 
 
