@@ -1,7 +1,10 @@
 ﻿@page "/dashboard"
+@rendermode InteractiveServer
 
 @using QuiniegolModels
 @using QuiniegolWeb.Services
+@using QuiniegolController
+@using System.IO
 
 @inject SesionService Session
 @inject NavigationManager Navigation
@@ -13,59 +16,139 @@
     @if (!Session.SesionIniciada)
     {
         <div class="alert alert-warning">
+
             <h4>Sesión no iniciada</h4>
-            <p>Debe iniciar sesión para acceder al dashboard.</p>
+
+            <p>
+                Debe iniciar sesión para acceder al dashboard.
+            </p>
 
             <button class="btn btn-primary"
                     @onclick="IrAlLogin">
                 Iniciar sesión
             </button>
+
         </div>
     }
     else
     {
         <div class="mb-4">
+
             <h1>Bienvenido a Quiniegol</h1>
 
             <p class="lead">
-                Hola, <strong>@Session.UsuarioActual.Nombre</strong>.
+                Hola,
+                <strong>
+                    @Session.UsuarioActual.Nombre
+                </strong>.
             </p>
+
         </div>
 
-        <div class="row">
 
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Mi información</h5>
+        <!-- ========================================== -->
+        <!-- NOTIFICACIONES -->
+        <!-- ========================================== -->
 
-                        <p>
-                            <strong>Usuario:</strong>
-                            @Session.UsuarioActual.Nombre
-                        </p>
+        <div class="card mb-4">
 
-                        <p>
-                            <strong>País preferido:</strong>
-                            @Session.UsuarioActual.PaisPreferido
-                        </p>
+            <div class="card-body">
 
-                        <p>
-                            <strong>Rol:</strong>
-                            @Session.UsuarioActual.Rol
-                        </p>
+                <h5 class="card-title">
+                    Notificaciones
+                </h5>
 
-                        <p>
-                            <strong>Estado:</strong>
-                            @(Session.UsuarioActual.Activo ? "Activo" : "Inactivo")
-                        </p>
+                @if (notificaciones.Count > 0)
+                {
+                    <p>
+                        Tienes partidos próximos que todavía
+                        no has pronosticado:
+                    </p>
+
+                    @foreach (var notificacion in notificaciones)
+                    {
+                        <div class="alert alert-warning">
+
+                            <strong>
+                                @notificacion.Fecha.ToString(
+                                "dd/MM/yyyy HH:mm")
+                </strong>
+
+                <br />
+
+                @notificacion.Mensaje
+
+            </div>
+                        }
+                }
+                else
+                {
+                    <p class="text-muted mb-0">
+                        No tienes partidos pendientes de
+                        pronosticar dentro de las próximas
+                        24 horas.
+                    </p>
+                }
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- INFORMACIÓN DEL USUARIO -->
+    <!-- ========================================== -->
+
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+
+            <div class="card">
+
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Mi información
+                    </h5>
+
+                    <p>
+                        <strong>Usuario:</strong>
+                        @Session.UsuarioActual.Nombre
+                    </p>
+
+                    <p>
+                        <strong>País preferido:</strong>
+                        @Session.UsuarioActual.PaisPreferido
+                    </p>
+
+                    <p>
+                        <strong>Rol:</strong>
+                        @Session.UsuarioActual.Rol
+                    </p>
+
+                    <p>
+                        <strong>Estado:</strong>
+                        @(Session.UsuarioActual.Activo
+                                                ? "Activo"
+                                                : "Inactivo")
+                    </p>
+
                     </div>
+
                 </div>
+
             </div>
 
+
             <div class="col-md-6 mb-3">
+
                 <div class="card">
+
                     <div class="card-body">
-                        <h5 class="card-title">Mis puntos</h5>
+
+                        <h5 class="card-title">
+                            Mis puntos
+                        </h5>
 
                         <h2>
                             @Session.UsuarioActual.Puntos
@@ -74,13 +157,22 @@
                         <p class="text-muted">
                             Puntos acumulados en Quiniegol.
                         </p>
+
                     </div>
+
                 </div>
+
             </div>
 
         </div>
 
+
+        <!-- ========================================== -->
+        <!-- OPCIONES -->
+        <!-- ========================================== -->
+
         <div class="card mt-3">
+
             <div class="card-body">
 
                 <h5 class="card-title">
@@ -93,8 +185,23 @@
                     notificaciones e insignias.
                 </p>
 
+                <div class="mt-3">
+
+                    <button class="btn btn-primary"
+                            @onclick="VerReportes">
+                        Mis reportes
+                    </button>
+
+                </div>
+
             </div>
+
         </div>
+
+
+        <!-- ========================================== -->
+        <!-- CERRAR SESIÓN -->
+        <!-- ========================================== -->
 
         <div class="mt-4">
 
@@ -104,16 +211,210 @@
             </button>
 
         </div>
-    }
+
+        }
 
 </div>
 
+
 @code {
+
+    private List<Notificacion> notificaciones =
+        new List<Notificacion>();
+
+
+    protected override void OnInitialized()
+    {
+        if (!Session.SesionIniciada ||
+            Session.UsuarioActual is null)
+        {
+            return;
+        }
+
+        CargarNotificaciones();
+    }
+
+
+    private void CargarNotificaciones()
+    {
+        notificaciones =
+            new List<Notificacion>();
+
+        try
+        {
+            // ==========================================
+            // CARGAR PRONÓSTICOS
+            // ==========================================
+
+            var pronosticoDataHandler =
+                new FileHandler<Pronostico>();
+
+            var pronosticoController =
+                new PronosticoController(
+                    pronosticoDataHandler);
+
+            var archivoPronosticos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Pronosticos.csv");
+
+            archivoPronosticos =
+                Path.GetFullPath(
+                    archivoPronosticos);
+
+            var pronosticos =
+                pronosticoController.Load(
+                    archivoPronosticos);
+
+
+            // ==========================================
+            // CARGAR LOS PRONÓSTICOS DEL USUARIO
+            // ==========================================
+
+            Session.UsuarioActual.Pronosticos =
+                pronosticos
+                    .FindAll(pronostico =>
+                        pronostico != null &&
+                        pronostico.NombreUsuario ==
+                        Session.UsuarioActual.Nombre);
+
+
+            // ==========================================
+            // CARGAR PARTIDOS
+            // ==========================================
+
+            var partidoDataHandler =
+                new FileHandler<Partido>();
+
+            var partidoController =
+                new PartidoController(
+                    partidoDataHandler);
+
+            var archivoPartidos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv");
+
+            archivoPartidos =
+                Path.GetFullPath(
+                    archivoPartidos);
+
+            var partidos =
+                partidoController.Load(
+                    archivoPartidos);
+
+
+            // ==========================================
+            // OBTENER FECHA/HORA SIMULADA
+            // ==========================================
+
+            DateTime fechaSistema =
+                Reloj.Instance.CurrentDateTime;
+
+
+            // ==========================================
+            // BUSCAR PARTIDOS DE LAS PRÓXIMAS 24 HORAS
+            // ==========================================
+
+            DateTime limite24Horas =
+                fechaSistema.AddHours(24);
+
+
+            foreach (Partido partido in partidos)
+            {
+                if (partido == null ||
+                    partido.Local == null ||
+                    partido.Visitante == null)
+                {
+                    continue;
+                }
+
+
+                // El partido ya comenzó.
+                if (partido.Fecha <= fechaSistema)
+                {
+                    continue;
+                }
+
+
+                // El partido está fuera de las próximas 24 horas.
+                if (partido.Fecha > limite24Horas)
+                {
+                    continue;
+                }
+
+
+                // El partido ya finalizó.
+                if (partido.Finalizado)
+                {
+                    continue;
+                }
+
+
+                // Comprobamos si el usuario ya realizó
+                // un pronóstico para este partido.
+                bool yaPronostico =
+                    Session.UsuarioActual.Pronosticos
+                        .Exists(pronostico =>
+                            pronostico != null &&
+                            pronostico.NombreUsuario ==
+                            Session.UsuarioActual.Nombre &&
+                            pronostico.Local ==
+                            partido.Local.Nombre &&
+                            pronostico.Visitante ==
+                            partido.Visitante.Nombre);
+
+
+                if (yaPronostico)
+                {
+                    continue;
+                }
+
+
+                // Creamos la notificación.
+                string mensaje =
+                    $"Falta realizar el pronóstico del partido " +
+                    $"{partido.Local.Nombre} vs " +
+                    $"{partido.Visitante.Nombre}, " +
+                    $"programado para " +
+                    $"{partido.Fecha:dd/MM/yyyy HH:mm}.";
+
+
+                notificaciones.Add(
+                    new Notificacion(
+                        mensaje,
+                        fechaSistema));
+            }
+        }
+        catch
+        {
+            notificaciones =
+                new List<Notificacion>();
+        }
+    }
+
 
     private void IrAlLogin()
     {
         Navigation.NavigateTo("/login");
     }
+
+
+    private void VerReportes()
+    {
+        Navigation.NavigateTo("/reportes-usuario");
+    }
+
 
     private void CerrarSesion()
     {
@@ -121,4 +422,5 @@
 
         Navigation.NavigateTo("/login");
     }
+
 }

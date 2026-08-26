@@ -1,0 +1,730 @@
+﻿@page "/reportes-usuario"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolWeb.Services
+@using QuiniegolController
+@using System.IO
+@using System.Linq
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Mis reportes - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1>Mis reportes</h1>
+
+            @if (Session.UsuarioActual is not null)
+            {
+                <p class="text-muted">
+                    Usuario: @Session.UsuarioActual.Nombre
+                </p>
+            }
+        </div>
+
+        <div>
+
+            <button class="btn btn-secondary me-2"
+                    @onclick="VolverAlDashboard">
+                Volver al dashboard
+            </button>
+
+            <button class="btn btn-danger"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+
+        </div>
+
+    </div>
+
+    <hr />
+
+    @if (!autorizado)
+    {
+        <div class="alert alert-warning">
+            Verificando sesión...
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert @(esError ? "alert-danger" : "alert-success")">
+                @mensaje
+            </div>
+        }
+
+        <!-- REPORTE 1 -->
+
+        <div class="card mb-4">
+
+            <div class="card-header bg-dark text-white">
+
+                <h4 class="mb-0">
+                    1. Equipo más apostado
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted">
+                    Muestra el equipo que aparece con mayor frecuencia
+                    en los pronósticos realizados por el usuario.
+                </p>
+
+                @if (equipoMasApostado is not null)
+                {
+                    <div class="row">
+
+                        <div class="col-md-6">
+
+                            <div class="alert alert-info">
+
+                                <strong>Equipo:</strong>
+
+                                <span class="fs-4 ms-2">
+                                    @equipoMasApostado.Nombre
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <div class="alert alert-success">
+
+                                <strong>Pronósticos:</strong>
+
+                                <span class="fs-4 ms-2">
+                                    @equipoMasApostado.Cantidad
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        No existen pronósticos registrados.
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- REPORTE 2 -->
+
+        <div class="card mb-4">
+
+            <div class="card-header bg-dark text-white">
+
+                <h4 class="mb-0">
+                    2. Equipo sorpresa
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted">
+                    Muestra un equipo que ganó un partido cuando el usuario
+                    había pronosticado que perdería o que el partido terminaría
+                    en empate.
+                </p>
+
+                @if (equiposSorpresa.Count > 0)
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered table-hover">
+
+                            <thead class="table-dark">
+
+                                <tr>
+                                    <th>Partido</th>
+                                    <th>Pronóstico</th>
+                                    <th>Resultado real</th>
+                                    <th>Equipo sorpresa</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var sorpresa in equiposSorpresa)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @sorpresa.Local
+                                            vs
+                                            @sorpresa.Visitante
+                                        </td>
+
+                                        <td>
+                                            @sorpresa.Pronostico
+                                        </td>
+
+                                        <td>
+                                            @sorpresa.Resultado
+                                        </td>
+
+                                        <td>
+                                            <strong>
+                                                @sorpresa.EquipoSorpresa
+                                            </strong>
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        No se encontraron equipos sorpresa en los partidos
+                        finalizados que el usuario haya pronosticado.
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- REPORTE 3 -->
+
+        <div class="card mb-4">
+
+            <div class="card-header bg-dark text-white">
+
+                <h4 class="mb-0">
+                    3. Mis pronósticos anteriores
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <p class="text-muted">
+                    Muestra los pronósticos realizados para partidos
+                    finalizados y una estimación de la probabilidad de acierto
+                    basada en el historial disponible del usuario.
+                </p>
+
+                @if (pronosticosAnteriores.Count > 0)
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered table-hover">
+
+                            <thead class="table-dark">
+
+                                <tr>
+                                    <th>Partido</th>
+                                    <th>Mi pronóstico</th>
+                                    <th>Resultado</th>
+                                    <th>Puntos</th>
+                                    <th>¿Acertó?</th>
+                                    <th>Probabilidad estimada</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var pronostico in pronosticosAnteriores)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @pronostico.Local
+                                            vs
+                                            @pronostico.Visitante
+                                        </td>
+
+                                        <td>
+                                            @pronostico.GolesPronosticados
+                                        </td>
+
+                                        <td>
+                                            @pronostico.ResultadoReal
+                                        </td>
+
+                                        <td>
+                                            @pronostico.Puntos
+                                        </td>
+
+                                        <td>
+                                            @(pronostico.Acertado ? "Sí" : "No")
+                                        </td>
+
+                                        <td>
+                                            @pronostico.Probabilidad.ToString("0.00")%
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        No existen pronósticos anteriores correspondientes
+                        a partidos finalizados.
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    }
+
+</div>
+
+
+@code {
+
+    private bool autorizado = false;
+
+    private string mensaje = string.Empty;
+
+    private bool esError = false;
+
+    private List<Pronostico> pronosticos = new();
+
+    private List<Partido> partidos = new();
+
+    private EquipoReporte? equipoMasApostado;
+
+    private List<EquipoSorpresaReporte> equiposSorpresa = new();
+
+    private List<PronosticoAnteriorReporte> pronosticosAnteriores = new();
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (Session.UsuarioActual is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (Session.UsuarioActual.Rol != "Usuario")
+        {
+            Navigation.NavigateTo("/admin");
+            return;
+        }
+
+        autorizado = true;
+
+        CargarDatos();
+
+        StateHasChanged();
+    }
+
+
+    private void CargarDatos()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        try
+        {
+            CargarPartidos();
+
+            CargarPronosticos();
+
+            GenerarEquipoMasApostado();
+
+            GenerarEquiposSorpresa();
+
+            GenerarPronosticosAnteriores();
+        }
+        catch (Exception ex)
+        {
+            partidos = new List<Partido>();
+
+            pronosticos = new List<Pronostico>();
+
+            equipoMasApostado = null;
+
+            equiposSorpresa =
+                new List<EquipoSorpresaReporte>();
+
+            pronosticosAnteriores =
+                new List<PronosticoAnteriorReporte>();
+
+            mensaje =
+                "No fue posible cargar los reportes: "
+                + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    private void CargarPartidos()
+    {
+        var partidoDataHandler =
+            new FileHandler<Partido>();
+
+        var partidoController =
+            new PartidoController(
+                partidoDataHandler);
+
+        var archivoPartidos =
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv");
+
+        archivoPartidos =
+            Path.GetFullPath(
+                archivoPartidos);
+
+        partidos =
+            partidoController.Load(
+                archivoPartidos);
+
+        if (partidos == null)
+        {
+            partidos =
+                new List<Partido>();
+        }
+    }
+
+
+    private void CargarPronosticos()
+    {
+        var pronosticoDataHandler =
+            new FileHandler<Pronostico>();
+
+        var archivoPronosticos =
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Pronosticos.csv");
+
+        archivoPronosticos =
+            Path.GetFullPath(
+                archivoPronosticos);
+
+        var pronosticoController =
+            new PronosticoController(
+                pronosticoDataHandler);
+
+        var todosLosPronosticos =
+            pronosticoController.Load(
+                archivoPronosticos);
+
+        pronosticos =
+            todosLosPronosticos
+                .Where(pronostico =>
+                    pronostico.NombreUsuario ==
+                    Session.UsuarioActual.Nombre)
+                .ToList();
+    }
+
+
+    private void GenerarEquipoMasApostado()
+    {
+        if (pronosticos.Count == 0)
+        {
+            equipoMasApostado = null;
+            return;
+        }
+
+        var equipos =
+            pronosticos
+                .SelectMany(pronostico =>
+                    new[]
+                    {
+                        pronostico.Local,
+                        pronostico.Visitante
+                    })
+                .GroupBy(
+                    equipo => equipo)
+                .Select(
+                    grupo => new EquipoReporte
+                    {
+                        Nombre = grupo.Key,
+                        Cantidad = grupo.Count()
+                    })
+                .OrderByDescending(
+                    equipo => equipo.Cantidad)
+                .ThenBy(
+                    equipo => equipo.Nombre)
+                .FirstOrDefault();
+
+        equipoMasApostado = equipos;
+    }
+
+
+    private void GenerarEquiposSorpresa()
+    {
+        equiposSorpresa =
+            new List<EquipoSorpresaReporte>();
+
+        foreach (var pronostico in pronosticos)
+        {
+            var partido =
+                partidos.FirstOrDefault(
+                    elemento =>
+                        elemento.Local != null &&
+                        elemento.Visitante != null &&
+                        elemento.Local.Nombre ==
+                            pronostico.Local &&
+                        elemento.Visitante.Nombre ==
+                            pronostico.Visitante);
+
+            if (partido == null ||
+                !partido.Finalizado)
+            {
+                continue;
+            }
+
+            int resultadoPronosticado =
+                ObtenerResultado(
+                    pronostico.GolesLocal,
+                    pronostico.GolesVisitante);
+
+            int resultadoReal =
+                ObtenerResultado(
+                    partido.GolesLocal,
+                    partido.GolesVisitante);
+
+            if (resultadoReal != 1)
+            {
+                continue;
+            }
+
+            if (resultadoPronosticado == 1)
+            {
+                continue;
+            }
+
+            equiposSorpresa.Add(
+                new EquipoSorpresaReporte
+                {
+                    Local = partido.Local.Nombre,
+                    Visitante = partido.Visitante.Nombre,
+
+                    Pronostico =
+                        $"{pronostico.GolesLocal} - " +
+                        $"{pronostico.GolesVisitante}",
+
+                    Resultado =
+                        $"{partido.GolesLocal} - " +
+                        $"{partido.GolesVisitante}",
+
+                    EquipoSorpresa =
+                        partido.Local.Nombre
+                });
+        }
+    }
+
+
+    private void GenerarPronosticosAnteriores()
+    {
+        pronosticosAnteriores =
+            new List<PronosticoAnteriorReporte>();
+
+        var pronosticosFinalizados =
+            pronosticos
+                .Select(pronostico =>
+                    new
+                    {
+                        Pronostico = pronostico,
+
+                        Partido =
+                            partidos.FirstOrDefault(
+                                partido =>
+                                    partido.Local != null &&
+                                    partido.Visitante != null &&
+                                    partido.Local.Nombre ==
+                                        pronostico.Local &&
+                                    partido.Visitante.Nombre ==
+                                        pronostico.Visitante)
+                    })
+                .Where(elemento =>
+                    elemento.Partido != null &&
+                    elemento.Partido.Finalizado)
+                .ToList();
+
+        int totalPronosticos =
+            pronosticosFinalizados.Count;
+
+        int aciertos =
+            pronosticosFinalizados.Count(
+                elemento =>
+                    elemento.Pronostico.Puntos > 0);
+
+        double probabilidad =
+            totalPronosticos == 0
+                ? 0
+                : ((double)aciertos /
+                    totalPronosticos) * 100;
+
+        foreach (var elemento in pronosticosFinalizados)
+        {
+            var pronostico =
+                elemento.Pronostico;
+
+            var partido =
+                elemento.Partido!;
+
+            bool acertado =
+                pronostico.Puntos > 0;
+
+            pronosticosAnteriores.Add(
+                new PronosticoAnteriorReporte
+                {
+                    Local =
+                        partido.Local.Nombre,
+
+                    Visitante =
+                        partido.Visitante.Nombre,
+
+                    GolesPronosticados =
+                        $"{pronostico.GolesLocal} - " +
+                        $"{pronostico.GolesVisitante}",
+
+                    ResultadoReal =
+                        $"{partido.GolesLocal} - " +
+                        $"{partido.GolesVisitante}",
+
+                    Puntos =
+                        pronostico.Puntos,
+
+                    Acertado =
+                        acertado,
+
+                    Probabilidad =
+                        probabilidad
+                });
+        }
+    }
+
+
+    private int ObtenerResultado(
+        int golesLocal,
+        int golesVisitante)
+    {
+        if (golesLocal > golesVisitante)
+        {
+            return 1;
+        }
+
+        if (golesLocal < golesVisitante)
+        {
+            return -1;
+        }
+
+        return 0;
+    }
+
+
+    private void VolverAlDashboard()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+
+
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+
+
+    private class EquipoReporte
+    {
+        public string Nombre { get; set; } =
+            string.Empty;
+
+        public int Cantidad { get; set; }
+    }
+
+
+    private class EquipoSorpresaReporte
+    {
+        public string Local { get; set; } =
+            string.Empty;
+
+        public string Visitante { get; set; } =
+            string.Empty;
+
+        public string Pronostico { get; set; } =
+            string.Empty;
+
+        public string Resultado { get; set; } =
+            string.Empty;
+
+        public string EquipoSorpresa { get; set; } =
+            string.Empty;
+    }
+
+
+    private class PronosticoAnteriorReporte
+    {
+        public string Local { get; set; } =
+            string.Empty;
+
+        public string Visitante { get; set; } =
+            string.Empty;
+
+        public string GolesPronosticados { get; set; } =
+            string.Empty;
+
+        public string ResultadoReal { get; set; } =
+            string.Empty;
+
+        public int Puntos { get; set; }
+
+        public bool Acertado { get; set; }
+
+        public double Probabilidad { get; set; }
+    }
+
+}
