@@ -6,25 +6,14 @@ namespace Quiniegol.Services
 {
     /// <summary>
     /// Servicio encargado de gestionar las notificaciones
-    /// del timeline de cada quiniela.
+    /// del timeline de cada quiniela y las notificaciones
+    /// de partidos pendientes de pronosticar.
     /// </summary>
     public class NotificacionService
     {
         /// <summary>
         /// Agrega una notificación al timeline de una quiniela.
         /// </summary>
-        /// <param name="quiniela">
-        /// Quiniela donde se agregará la notificación.
-        /// </param>
-        /// <param name="mensaje">
-        /// Mensaje que se mostrará en el timeline.
-        /// </param>
-        /// <param name="fecha">
-        /// Fecha y hora de la notificación.
-        /// </param>
-        /// <returns>
-        /// True si la notificación fue agregada correctamente.
-        /// </returns>
         public bool AgregarNotificacion(
             Quiniela quiniela,
             string mensaje,
@@ -153,12 +142,6 @@ namespace Quiniegol.Services
         /// <summary>
         /// Obtiene el timeline de notificaciones de una quiniela.
         /// </summary>
-        /// <param name="quiniela">
-        /// Quiniela de la cual se desean obtener las notificaciones.
-        /// </param>
-        /// <returns>
-        /// Lista de notificaciones de la quiniela.
-        /// </returns>
         public List<Notificacion> ObtenerTimeline(
             Quiniela quiniela)
         {
@@ -169,6 +152,148 @@ namespace Quiniegol.Services
             }
 
             return quiniela.Notificaciones;
+        }
+
+        /// <summary>
+        /// Obtiene las notificaciones de los partidos que
+        /// todavía no han sido pronosticados por el usuario
+        /// y que se encuentran dentro de las próximas 24 horas.
+        /// </summary>
+        /// <param name="usuario">
+        /// Usuario que inició sesión.
+        /// </param>
+        /// <param name="partidos">
+        /// Partidos disponibles del sistema.
+        /// </param>
+        /// <param name="fechaSistema">
+        /// Fecha y hora simulada del sistema.
+        /// </param>
+        /// <returns>
+        /// Lista de notificaciones para los partidos pendientes.
+        /// </returns>
+        public List<Notificacion>
+            ObtenerNotificacionesPartidosPendientes(
+                Usuario usuario,
+                List<Partido> partidos,
+                DateTime fechaSistema)
+        {
+            var notificaciones =
+                new List<Notificacion>();
+
+            if (usuario == null ||
+                partidos == null ||
+                partidos.Count == 0)
+            {
+                return notificaciones;
+            }
+
+            DateTime limite24Horas =
+                fechaSistema.AddHours(24);
+
+            foreach (Partido partido in partidos)
+            {
+                if (partido == null ||
+                    partido.Local == null ||
+                    partido.Visitante == null)
+                {
+                    continue;
+                }
+
+                // El partido debe comenzar después
+                // de la fecha actual.
+                if (partido.Fecha <= fechaSistema)
+                {
+                    continue;
+                }
+
+                // El partido debe comenzar dentro
+                // de las próximas 24 horas.
+                if (partido.Fecha > limite24Horas)
+                {
+                    continue;
+                }
+
+                // No se consideran partidos finalizados.
+                if (partido.Finalizado)
+                {
+                    continue;
+                }
+
+                // Si el usuario ya realizó un pronóstico
+                // para este partido, no se genera notificación.
+                if (TienePronostico(
+                        usuario,
+                        partido))
+                {
+                    continue;
+                }
+
+                string mensaje =
+                    $"Falta realizar el pronóstico del partido " +
+                    $"{partido.Local.Nombre} vs " +
+                    $"{partido.Visitante.Nombre}, " +
+                    $"programado para " +
+                    $"{partido.Fecha:dd/MM/yyyy HH:mm}.";
+
+                notificaciones.Add(
+                    new Notificacion(
+                        mensaje,
+                        fechaSistema));
+            }
+
+            return notificaciones;
+        }
+
+        /// <summary>
+        /// Determina si el usuario ya realizó un pronóstico
+        /// para el partido indicado.
+        /// </summary>
+        /// <param name="usuario">
+        /// Usuario que será evaluado.
+        /// </param>
+        /// <param name="partido">
+        /// Partido que será evaluado.
+        /// </param>
+        /// <returns>
+        /// True si ya existe un pronóstico para el partido.
+        /// </returns>
+        private bool TienePronostico(
+            Usuario usuario,
+            Partido partido)
+        {
+            if (usuario == null ||
+                usuario.Pronosticos == null ||
+                partido == null ||
+                partido.Local == null ||
+                partido.Visitante == null)
+            {
+                return false;
+            }
+
+            foreach (Pronostico pronostico
+                in usuario.Pronosticos)
+            {
+                if (pronostico == null)
+                {
+                    continue;
+                }
+
+                if (pronostico.NombreUsuario !=
+                    usuario.Nombre)
+                {
+                    continue;
+                }
+
+                if (pronostico.Local ==
+                    partido.Local.Nombre &&
+                    pronostico.Visitante ==
+                    partido.Visitante.Nombre)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

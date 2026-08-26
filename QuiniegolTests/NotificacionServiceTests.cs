@@ -2,6 +2,7 @@
 using Quiniegol.Services;
 using QuiniegolModels;
 using System;
+using System.Collections.Generic;
 
 namespace QuiniegolTests
 {
@@ -25,6 +26,7 @@ namespace QuiniegolTests
                     DateTime.Now);
 
             Assert.IsTrue(resultado);
+
             Assert.AreEqual(
                 1,
                 quiniela.Notificaciones.Count);
@@ -119,6 +121,7 @@ namespace QuiniegolTests
                     DateTime.Now);
 
             Assert.IsTrue(resultado);
+
             Assert.AreEqual(
                 1,
                 quiniela.Notificaciones.Count);
@@ -156,6 +159,287 @@ namespace QuiniegolTests
             StringAssert.Contains(
                 quiniela.Notificaciones[0].Mensaje,
                 "11");
+        }
+
+        // =========================================================
+        // PRUEBAS DEL PROYECTO 2
+        // NOTIFICACIONES DE PARTIDOS DENTRO DE 24 HORAS
+        // =========================================================
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_DebeNotificarPartidoDentroDe24Horas()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var usuario =
+                new Usuario(
+                    "Carlos",
+                    "Costa Rica",
+                    50);
+
+            var partido =
+                new Partido(
+                    new Seleccion(
+                        "Costa Rica",
+                        "A"),
+                    new Seleccion(
+                        "Brasil",
+                        "A"),
+                    fechaSistema.AddHours(5));
+
+            var partidos =
+                new List<Partido>
+                {
+                    partido
+                };
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    usuario,
+                    partidos,
+                    fechaSistema);
+
+            Assert.AreEqual(
+                1,
+                resultado.Count);
+
+            StringAssert.Contains(
+                resultado[0].Mensaje,
+                "Costa Rica");
+
+            StringAssert.Contains(
+                resultado[0].Mensaje,
+                "Brasil");
+        }
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_NoDebeNotificarSiYaExistePronostico()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var usuario =
+                new Usuario(
+                    "Carlos",
+                    "Costa Rica",
+                    50);
+
+            var partido =
+                new Partido(
+                    new Seleccion(
+                        "Costa Rica",
+                        "A"),
+                    new Seleccion(
+                        "Brasil",
+                        "A"),
+                    fechaSistema.AddHours(5));
+
+            usuario.Pronosticos.Add(
+                new Pronostico(
+                    "Carlos",
+                    "Costa Rica",
+                    "Brasil",
+                    2,
+                    1));
+
+            var partidos =
+                new List<Partido>
+                {
+                    partido
+                };
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    usuario,
+                    partidos,
+                    fechaSistema);
+
+            Assert.AreEqual(
+                0,
+                resultado.Count);
+        }
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_NoDebeNotificarPartidoFueraDe24Horas()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var usuario =
+                new Usuario(
+                    "Carlos",
+                    "Costa Rica",
+                    50);
+
+            var partido =
+                new Partido(
+                    new Seleccion(
+                        "Costa Rica",
+                        "A"),
+                    new Seleccion(
+                        "Brasil",
+                        "A"),
+                    fechaSistema.AddHours(25));
+
+            var partidos =
+                new List<Partido>
+                {
+                    partido
+                };
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    usuario,
+                    partidos,
+                    fechaSistema);
+
+            Assert.AreEqual(
+                0,
+                resultado.Count);
+        }
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_NoDebeNotificarPartidoYaIniciado()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var usuario =
+                new Usuario(
+                    "Carlos",
+                    "Costa Rica",
+                    50);
+
+            var partido =
+                new Partido(
+                    new Seleccion(
+                        "Costa Rica",
+                        "A"),
+                    new Seleccion(
+                        "Brasil",
+                        "A"),
+                    fechaSistema.AddMinutes(-30));
+
+            var partidos =
+                new List<Partido>
+                {
+                    partido
+                };
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    usuario,
+                    partidos,
+                    fechaSistema);
+
+            Assert.AreEqual(
+                0,
+                resultado.Count);
+        }
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_UsuarioNulo_DebeRetornarListaVacia()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var partido =
+                new Partido(
+                    new Seleccion(
+                        "Costa Rica",
+                        "A"),
+                    new Seleccion(
+                        "Brasil",
+                        "A"),
+                    fechaSistema.AddHours(5));
+
+            var partidos =
+                new List<Partido>
+                {
+                    partido
+                };
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    null,
+                    partidos,
+                    fechaSistema);
+
+            Assert.AreEqual(
+                0,
+                resultado.Count);
+        }
+
+        [TestMethod]
+        public void ObtenerNotificacionesPartidosPendientes_ListaVacia_DebeRetornarListaVacia()
+        {
+            var service = new NotificacionService();
+
+            var fechaSistema =
+                new DateTime(
+                    2026,
+                    8,
+                    25,
+                    18,
+                    0,
+                    0);
+
+            var usuario =
+                new Usuario(
+                    "Carlos",
+                    "Costa Rica",
+                    50);
+
+            var resultado =
+                service.ObtenerNotificacionesPartidosPendientes(
+                    usuario,
+                    new List<Partido>(),
+                    fechaSistema);
+
+            Assert.AreEqual(
+                0,
+                resultado.Count);
         }
     }
 }
