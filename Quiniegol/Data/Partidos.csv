@@ -1,12 +1,12 @@
-Local,GrupoLocal,Visitante,GrupoVisitante,Fecha
-Costa Rica,A,Brasil,A,2026-08-25 18:00:00
-Argentina,B,España,B,2026-08-26 19:00:00
-México,C,Estados Unidos,C,2026-08-27 20:00:00
-México,C,Alemania,D,2026-08-28 18:00:00
-Francia,D,Italia,E,2026-08-29 18:00:00
-Portugal,E,Inglaterra,F,2026-08-30 18:00:00
-Países Bajos,F,Bélgica,G,2026-08-31 18:00:00
-Uruguay,G,Colombia,H,2026-09-01 18:00:00
-Chile,H,Ecuador,I,2026-09-02 18:00:00
-Perú,I,Paraguay,J,2026-09-03 18:00:00
-Bolivia,J,Venezuela,K,2026-09-04 18:00:00
+Local,GrupoLocal,Visitante,GrupoVisitante,Fecha,GolesLocal,GolesVisitante,Finalizado
+Costa Rica,A,Brasil,A,2026-08-25 18:00:00,0,0,False
+Argentina,B,España,B,2026-08-26 19:00:00,0,0,False
+México,C,Estados Unidos,C,2026-08-27 20:00:00,2,1,True
+México,C,Alemania,D,2026-08-28 18:00:00,0,0,False
+Francia,D,Italia,E,2026-08-29 18:00:00,0,0,False
+Portugal,E,Inglaterra,F,2026-08-30 18:00:00,0,0,False
+Países Bajos,F,Bélgica,G,2026-08-31 18:00:00,0,0,False
+Uruguay,G,Colombia,H,2026-09-01 18:00:00,0,0,False
+Chile,H,Ecuador,I,2026-09-02 18:00:00,0,0,False
+Perú,I,Paraguay,J,2026-09-03 18:00:00,0,0,False
+Bolivia,J,Venezuela,K,2026-09-04 18:00:00,0,0,False

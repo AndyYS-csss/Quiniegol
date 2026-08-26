@@ -107,8 +107,6 @@ namespace QuiniegolController
                         int.Parse(lineElement[2]));
 
                     // Compatibilidad con usuarios del Proyecto 1.
-                    // Si solamente tienen 3 datos,
-                    // se consideran usuarios normales y activos.
                     usuario.Rol = "Usuario";
                     usuario.Contrasena = "1234";
                     usuario.Activo = true;
@@ -163,6 +161,7 @@ namespace QuiniegolController
             return data;
         }
 
+
         /// <summary>
         /// Actualiza un elemento en el archivo.
         /// </summary>
@@ -186,11 +185,59 @@ namespace QuiniegolController
 
             bool actualizado = false;
 
+
+            // ==========================================
+            // ACTUALIZAR PARTIDO
+            // ==========================================
+
+            if (typeof(T) == typeof(Partido))
+            {
+                var partido =
+                    (Partido)(object)element;
+
+                for (var i = 1;
+                     i < lines.Length;
+                     i++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[i]))
+                    {
+                        continue;
+                    }
+
+                    var campos = lines[i].Split(',');
+
+                    if (campos.Length < 5)
+                    {
+                        continue;
+                    }
+
+                    bool mismoPartido =
+                        campos[0] == partido.Local.Nombre &&
+                        campos[2] == partido.Visitante.Nombre;
+
+                    if (mismoPartido)
+                    {
+                        lines[i] = string.Format(
+                            "{0},{1},{2},{3},{4}",
+                            partido.Local.Nombre,
+                            partido.Local.Grupo,
+                            partido.Visitante.Nombre,
+                            partido.Visitante.Grupo,
+                            partido.Fecha.ToString(
+                                "yyyy-MM-dd HH:mm:ss"));
+
+                        actualizado = true;
+                        break;
+                    }
+                }
+            }
+
+
             // ==========================================
             // ACTUALIZAR USUARIO
             // ==========================================
 
-            if (typeof(T) == typeof(Usuario))
+            else if (typeof(T) == typeof(Usuario))
             {
                 var usuario =
                     (Usuario)(object)element;
@@ -227,6 +274,7 @@ namespace QuiniegolController
                     }
                 }
             }
+
 
             // ==========================================
             // ACTUALIZAR PRONÓSTICO
@@ -278,6 +326,7 @@ namespace QuiniegolController
                 }
             }
 
+
             // ==========================================
             // ACTUALIZAR NOTIFICACIÓN
             // ==========================================
@@ -317,6 +366,7 @@ namespace QuiniegolController
                 }
             }
 
+
             if (!actualizado)
             {
                 return false;
@@ -328,6 +378,7 @@ namespace QuiniegolController
 
             return true;
         }
+
 
         /// <summary>
         /// Elimina un elemento del archivo.
@@ -341,6 +392,7 @@ namespace QuiniegolController
             return false;
         }
 
+
         /// <summary>
         /// Crea un elemento en el archivo.
         /// </summary>
@@ -353,6 +405,7 @@ namespace QuiniegolController
             {
                 return false;
             }
+
 
             // ==========================================
             // CREAR USUARIO
@@ -379,6 +432,7 @@ namespace QuiniegolController
                 return true;
             }
 
+
             // ==========================================
             // CREAR PRONÓSTICO
             // ==========================================
@@ -404,6 +458,7 @@ namespace QuiniegolController
                 return true;
             }
 
+
             // ==========================================
             // CREAR QUINIELA
             // ==========================================
@@ -424,6 +479,7 @@ namespace QuiniegolController
 
                 return true;
             }
+
 
             // ==========================================
             // CREAR NOTIFICACIÓN

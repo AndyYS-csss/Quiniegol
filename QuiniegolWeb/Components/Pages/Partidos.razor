@@ -238,6 +238,73 @@
                 }
 
 
+                @if (mostrarResultado)
+                {
+                    <div class="card mb-4">
+
+                        <div class="card-body">
+
+                            <h4>Registrar resultado</h4>
+
+                            @if (partidoResultado is not null)
+                            {
+                                <p>
+                                    <strong>
+                                        @partidoResultado.Local.Nombre
+                                        vs
+                                        @partidoResultado.Visitante.Nombre
+                                    </strong>
+                                </p>
+
+                                <div class="row">
+
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Goles @partidoResultado.Local.Nombre
+                                        </label>
+
+                                        <input type="number"
+                                               min="0"
+                                               class="form-control"
+                                               @bind="golesLocalResultado" />
+
+                                    </div>
+
+
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Goles @partidoResultado.Visitante.Nombre
+                                        </label>
+
+                                        <input type="number"
+                                               min="0"
+                                               class="form-control"
+                                               @bind="golesVisitanteResultado" />
+
+                                    </div>
+
+                                </div>
+
+
+                                <button class="btn btn-success me-2"
+                                        @onclick="GuardarResultado">
+                                    Guardar resultado
+                                </button>
+
+                                <button class="btn btn-secondary"
+                                        @onclick="CancelarResultado">
+                                    Cancelar
+                                </button>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+
                 @if (partidos.Count == 0)
                 {
                     <div class="alert alert-info">
@@ -258,6 +325,7 @@
                                     <th>Visitante</th>
                                     <th>Grupo</th>
                                     <th>Fecha</th>
+                                    <th>Resultado</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -294,6 +362,24 @@
 
                                             @if (partido.Finalizado)
                                             {
+                                                <strong>
+                                                    @partido.GolesLocal -
+                                                    @partido.GolesVisitante
+                                                </strong>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">
+                                                    Pendiente
+                                                </span>
+                                            }
+
+                                        </td>
+
+                                        <td>
+
+                                            @if (partido.Finalizado)
+                                            {
                                                 <span class="badge bg-secondary">
                                                     Finalizado
                                                 </span>
@@ -315,10 +401,18 @@
 
                                         <td>
 
-                                            <button class="btn btn-warning btn-sm"
+                                            <button class="btn btn-warning btn-sm me-1"
                                                     @onclick="() => MostrarEdicion(partido)">
                                                 Modificar
                                             </button>
+
+                                            @if (!partido.Finalizado)
+                                            {
+                                                <button class="btn btn-success btn-sm"
+                                                        @onclick="() => MostrarResultado(partido)">
+                                                    Resultado
+                                                </button>
+                                            }
 
                                         </td>
 
@@ -356,6 +450,8 @@
 
     private bool mostrarEdicion = false;
 
+    private bool mostrarResultado = false;
+
 
     // Datos del nuevo partido.
     private string nuevoLocal = string.Empty;
@@ -373,6 +469,14 @@
     private Partido? partidoEditando;
 
     private DateTime fechaEditada;
+
+
+    // Datos del resultado.
+    private Partido? partidoResultado;
+
+    private int golesLocalResultado = 0;
+
+    private int golesVisitanteResultado = 0;
 
 
     protected override void OnAfterRender(bool firstRender)
@@ -432,14 +536,72 @@
             {
                 partidos = new List<Partido>();
             }
+
+            // Recuperamos resultados guardados en el CSV.
+            CargarResultadosDesdeArchivo(archivoPartidos);
         }
         catch (Exception ex)
         {
             partidos = new List<Partido>();
 
-            mensaje = "No fue posible cargar los partidos: " + ex.Message;
+            mensaje =
+                "No fue posible cargar los partidos: " + ex.Message;
 
             esError = true;
+        }
+    }
+
+
+    private void CargarResultadosDesdeArchivo(string archivoPartidos)
+    {
+        if (!File.Exists(archivoPartidos))
+        {
+            return;
+        }
+
+        var lineas = File.ReadAllLines(archivoPartidos);
+
+        for (int i = 1; i < lineas.Length; i++)
+        {
+            if (string.IsNullOrWhiteSpace(lineas[i]))
+            {
+                continue;
+            }
+
+            var campos = lineas[i].Split(',');
+
+            // Los partidos anteriores tienen solamente
+            // los cinco campos originales.
+            if (campos.Length < 8)
+            {
+                continue;
+            }
+
+            if (!int.TryParse(campos[5], out int golesLocal))
+            {
+                continue;
+            }
+
+            if (!int.TryParse(campos[6], out int golesVisitante))
+            {
+                continue;
+            }
+
+            if (!bool.TryParse(campos[7], out bool finalizado))
+            {
+                continue;
+            }
+
+            var partido = partidos.Find(p =>
+                p.Local.Nombre == campos[0] &&
+                p.Visitante.Nombre == campos[2]);
+
+            if (partido is not null)
+            {
+                partido.GolesLocal = golesLocal;
+                partido.GolesVisitante = golesVisitante;
+                partido.Finalizado = finalizado;
+            }
         }
     }
 
@@ -457,6 +619,9 @@
         nuevaFecha = DateTime.Now.AddDays(1);
 
         mostrarFormulario = true;
+
+        mostrarEdicion = false;
+        mostrarResultado = false;
     }
 
 
@@ -508,7 +673,9 @@
             nuevoVisitante.Trim(),
             StringComparison.OrdinalIgnoreCase))
         {
-            mensaje = "El equipo local y visitante no pueden ser iguales.";
+            mensaje =
+                "El equipo local y visitante no pueden ser iguales.";
+
             esError = true;
             return;
         }
@@ -544,7 +711,11 @@
                 nuevoPartido.Local.Grupo,
                 nuevoPartido.Visitante.Nombre,
                 nuevoPartido.Visitante.Grupo,
-                nuevoPartido.Fecha.ToString("yyyy-MM-dd HH:mm:ss")
+                nuevoPartido.Fecha.ToString(
+                    "yyyy-MM-dd HH:mm:ss"),
+                nuevoPartido.GolesLocal,
+                nuevoPartido.GolesVisitante,
+                nuevoPartido.Finalizado
             );
 
             File.AppendAllText(
@@ -582,6 +753,7 @@
         mostrarEdicion = true;
 
         mostrarFormulario = false;
+        mostrarResultado = false;
     }
 
 
@@ -605,7 +777,9 @@
 
         if (partidoEditando is null)
         {
-            mensaje = "No hay ningún partido seleccionado.";
+            mensaje =
+                "No hay ningún partido seleccionado.";
+
             esError = true;
             return;
         }
@@ -614,7 +788,9 @@
         {
             if (partidoController is null)
             {
-                mensaje = "No se pudo acceder al controlador de partidos.";
+                mensaje =
+                    "No se pudo acceder al controlador de partidos.";
+
                 esError = true;
                 return;
             }
@@ -627,21 +803,14 @@
 
             if (!actualizado)
             {
-                mensaje = "No fue posible modificar el partido.";
+                mensaje =
+                    "No fue posible modificar el partido.";
+
                 esError = true;
                 return;
             }
 
-            var archivoPartidos = Path.Combine(
-                AppContext.BaseDirectory,
-                "..",
-                "..",
-                "..",
-                "..",
-                "Quiniegol",
-                "Data",
-                "Partidos.csv"
-            );
+            var archivoPartidos = ObtenerRutaPartidos();
 
             GuardarPartidosEnArchivo(archivoPartidos);
 
@@ -662,13 +831,132 @@
     }
 
 
-    // Guarda todos los partidos nuevamente en Partidos.csv.
+    // Mostrar el formulario para registrar resultado.
+    private void MostrarResultado(Partido partido)
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        partidoResultado = partido;
+
+        golesLocalResultado = partido.GolesLocal;
+        golesVisitanteResultado = partido.GolesVisitante;
+
+        mostrarResultado = true;
+
+        mostrarFormulario = false;
+        mostrarEdicion = false;
+    }
+
+
+    // Cancelar el registro del resultado.
+    private void CancelarResultado()
+    {
+        partidoResultado = null;
+
+        mostrarResultado = false;
+
+        mensaje = string.Empty;
+        esError = false;
+    }
+
+
+    // Guardar el resultado del partido.
+    private void GuardarResultado()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (partidoResultado is null)
+        {
+            mensaje =
+                "No hay ningún partido seleccionado.";
+
+            esError = true;
+            return;
+        }
+
+        if (golesLocalResultado < 0 ||
+            golesVisitanteResultado < 0)
+        {
+            mensaje =
+                "Los goles no pueden ser negativos.";
+
+            esError = true;
+            return;
+        }
+
+        try
+        {
+            if (partidoController is null)
+            {
+                mensaje =
+                    "No se pudo acceder al controlador de partidos.";
+
+                esError = true;
+                return;
+            }
+
+            bool actualizado = partidoController.UpdateResult(
+                partidoResultado.Local.Nombre,
+                partidoResultado.Visitante.Nombre,
+                golesLocalResultado,
+                golesVisitanteResultado
+            );
+
+            if (!actualizado)
+            {
+                mensaje =
+                    "No fue posible actualizar el resultado.";
+
+                esError = true;
+                return;
+            }
+
+            var archivoPartidos = ObtenerRutaPartidos();
+
+            GuardarPartidosEnArchivo(archivoPartidos);
+
+            mensaje =
+                $"El resultado {partidoResultado.Local.Nombre} {golesLocalResultado} - {golesVisitanteResultado} {partidoResultado.Visitante.Nombre} fue registrado correctamente.";
+
+            mostrarResultado = false;
+
+            partidoResultado = null;
+        }
+        catch (Exception ex)
+        {
+            mensaje =
+                "No fue posible guardar el resultado: " + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // Obtiene la ruta del archivo Partidos.csv.
+    private string ObtenerRutaPartidos()
+    {
+        return Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "Quiniegol",
+            "Data",
+            "Partidos.csv"
+        );
+    }
+
+
+    // Guarda todos los partidos en Partidos.csv.
     private void GuardarPartidosEnArchivo(string archivoPartidos)
     {
         var lineas = new List<string>();
 
         lineas.Add(
-            "Local,GrupoLocal,Visitante,GrupoVisitante,Fecha"
+            "Local,GrupoLocal,Visitante,GrupoVisitante,Fecha,GolesLocal,GolesVisitante,Finalizado"
         );
 
         foreach (var partido in partidos)
@@ -680,7 +968,11 @@
                     partido.Local.Grupo,
                     partido.Visitante.Nombre,
                     partido.Visitante.Grupo,
-                    partido.Fecha.ToString("yyyy-MM-dd HH:mm:ss")
+                    partido.Fecha.ToString(
+                        "yyyy-MM-dd HH:mm:ss"),
+                    partido.GolesLocal,
+                    partido.GolesVisitante,
+                    partido.Finalizado
                 )
             );
         }
