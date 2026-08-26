@@ -13,11 +13,23 @@ namespace QuiniegolModels
         /// <param name="nombre">Nombre completo del usuario.</param>
         /// <param name="paisPreferido">País preferido del usuario.</param>
         /// <param name="puntos">Puntos acumulados por el usuario.</param>
-        public Usuario(string nombre, string paisPreferido, int puntos)
+        public Usuario(
+            string nombre,
+            string paisPreferido,
+            int puntos)
         {
             this.Nombre = nombre;
             this.PaisPreferido = paisPreferido;
             this.Puntos = puntos;
+
+            // Los usuarios existentes del Proyecto 1
+            // continúan siendo usuarios normales.
+            this.Rol = "Usuario";
+
+            // Valores iniciales para la segunda iteración.
+            this.Contrasena = string.Empty;
+            this.Activo = true;
+
             this.Pronosticos = new List<Pronostico>();
             this.Quinielas = new List<Quiniela>();
             this.Insignias = new List<Insignia>();
@@ -37,6 +49,22 @@ namespace QuiniegolModels
         /// Obtiene o establece los puntos acumulados.
         /// </summary>
         public int Puntos { get; set; }
+
+        /// <summary>
+        /// Obtiene o establece el rol del usuario.
+        /// Puede ser Usuario o Administrador.
+        /// </summary>
+        public string Rol { get; set; }
+
+        /// <summary>
+        /// Obtiene o establece la contraseña del usuario.
+        /// </summary>
+        public string Contrasena { get; set; }
+
+        /// <summary>
+        /// Obtiene o establece si el usuario se encuentra activo.
+        /// </summary>
+        public bool Activo { get; set; }
 
         /// <summary>
         /// Obtiene los pronósticos realizados por el usuario.

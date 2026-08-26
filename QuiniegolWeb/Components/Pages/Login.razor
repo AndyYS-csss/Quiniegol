@@ -1,0 +1,89 @@
+﻿@using QuiniegolModels
+@using QuiniegolWeb.Services
+
+@inject SesionService Session
+
+<PageTitle>Iniciar sesión - Quiniegol</PageTitle>
+
+<div class="login-container">
+
+    <div class="login-card">
+
+        <h1>Quiniegol</h1>
+
+        <h3>Iniciar sesión</h3>
+
+        <div class="form-group">
+            <label>Usuario</label>
+            <input class="form-control"
+                   @bind="nombre"
+                   placeholder="Ingrese su nombre" />
+        </div>
+
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input class="form-control"
+                   type="password"
+                   @bind="contrasena"
+                   placeholder="Ingrese su contraseña" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert alert-danger">
+                @mensaje
+            </div>
+        }
+
+        <button class="btn btn-primary"
+                @onclick="IniciarSesion">
+            Iniciar sesión
+        </button>
+
+    </div>
+
+</div>
+
+@code {
+
+    private string nombre = string.Empty;
+    private string contrasena = string.Empty;
+    private string mensaje = string.Empty;
+
+    private void IniciarSesion()
+    {
+        mensaje = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(nombre) ||
+            string.IsNullOrWhiteSpace(contrasena))
+        {
+            mensaje = "Debe ingresar usuario y contraseña.";
+            return;
+        }
+
+        // Por ahora buscamos el usuario mediante el SessionService.
+        // La validación completa de credenciales se incorporará
+        // en el siguiente paso.
+        Usuario usuario = Session.BuscarUsuario(nombre);
+
+        if (usuario == null)
+        {
+            mensaje = "El usuario no existe.";
+            return;
+        }
+
+        if (!usuario.Activo)
+        {
+            mensaje = "El usuario se encuentra desactivado.";
+            return;
+        }
+
+        if (usuario.Contrasena != contrasena)
+        {
+            mensaje = "La contraseña es incorrecta.";
+            return;
+        }
+
+        Session.IniciarSesion(usuario);
+    }
+}

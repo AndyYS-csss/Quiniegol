@@ -9,21 +9,13 @@ namespace QuiniegolController
     /// <summary>
     /// Maneja las operaciones de datos utilizando archivos.
     /// </summary>
-    /// <typeparam name="T">
-    /// Tipo de dato que se va a manejar.
-    /// </typeparam>
+    /// <typeparam name="T">Tipo de dato que se va a manejar.</typeparam>
     public class FileHandler<T> : IDataHandler<T>
         where T : class
     {
         /// <summary>
         /// Carga los elementos desde el archivo.
         /// </summary>
-        /// <param name="fileName">
-        /// Nombre del archivo.
-        /// </param>
-        /// <returns>
-        /// Lista de elementos.
-        /// </returns>
         public List<T> Load(string fileName)
         {
             if (string.IsNullOrEmpty(fileName) ||
@@ -33,7 +25,6 @@ namespace QuiniegolController
             }
 
             var data = new List<T>();
-
             var lines = File.ReadAllLines(fileName);
 
             for (var i = 1; i < lines.Length; i++)
@@ -59,8 +50,7 @@ namespace QuiniegolController
                         lineElement[2],
                         lineElement[3]);
 
-                    var fecha =
-                        DateTime.Parse(lineElement[4]);
+                    var fecha = DateTime.Parse(lineElement[4]);
 
                     var partido = new Partido(
                         local,
@@ -95,23 +85,49 @@ namespace QuiniegolController
 
                 else if (typeof(T) == typeof(Notificacion))
                 {
-                    var mensaje =
-                        lineElement[0];
+                    var mensaje = lineElement[0];
+                    var fecha = DateTime.Parse(lineElement[1]);
 
-                    var fecha =
-                        DateTime.Parse(lineElement[1]);
+                    var notificacion = new Notificacion(
+                        mensaje,
+                        fecha);
 
-                    var notificacion =
-                        new Notificacion(
-                            mensaje,
-                            fecha);
-
-                    data.Add(
-                        (T)(object)notificacion);
+                    data.Add((T)(object)notificacion);
                 }
 
                 // ==========================================
-                // OTROS TIPOS DE DATOS
+                // CARGAR USUARIOS
+                // ==========================================
+
+                else if (typeof(T) == typeof(Usuario))
+                {
+                    var usuario = new Usuario(
+                        lineElement[0],
+                        lineElement[1],
+                        int.Parse(lineElement[2]));
+
+                    // Compatibilidad con usuarios del Proyecto 1.
+                    // Si solamente tienen 3 datos,
+                    // se consideran usuarios normales y activos.
+                    usuario.Rol = "Usuario";
+                    usuario.Contrasena = "1234";
+                    usuario.Activo = true;
+
+                    // Usuarios del Proyecto 2:
+                    // Nombre, País, Puntos, Rol, Contraseña, Activo
+                    if (lineElement.Length >= 6)
+                    {
+                        usuario.Rol = lineElement[3];
+                        usuario.Contrasena = lineElement[4];
+                        usuario.Activo =
+                            bool.Parse(lineElement[5]);
+                    }
+
+                    data.Add((T)(object)usuario);
+                }
+
+                // ==========================================
+                // CARGAR OTROS TIPOS
                 // ==========================================
 
                 else
@@ -150,15 +166,6 @@ namespace QuiniegolController
         /// <summary>
         /// Actualiza un elemento en el archivo.
         /// </summary>
-        /// <param name="fileName">
-        /// Nombre del archivo.
-        /// </param>
-        /// <param name="element">
-        /// Elemento que se desea actualizar.
-        /// </param>
-        /// <returns>
-        /// True si se actualizó correctamente.
-        /// </returns>
         public bool Update(
             string fileName,
             T element)
@@ -197,8 +204,7 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos =
-                        lines[i].Split(',');
+                    var campos = lines[i].Split(',');
 
                     if (campos.Length < 3)
                     {
@@ -208,10 +214,13 @@ namespace QuiniegolController
                     if (campos[0] == usuario.Nombre)
                     {
                         lines[i] = string.Format(
-                            "{0},{1},{2}",
+                            "{0},{1},{2},{3},{4},{5}",
                             usuario.Nombre,
                             usuario.PaisPreferido,
-                            usuario.Puntos);
+                            usuario.Puntos,
+                            usuario.Rol,
+                            usuario.Contrasena,
+                            usuario.Activo);
 
                         actualizado = true;
                         break;
@@ -237,8 +246,7 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos =
-                        lines[i].Split(',');
+                    var campos = lines[i].Split(',');
 
                     if (campos.Length < 6)
                     {
@@ -288,8 +296,7 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos =
-                        lines[i].Split(',');
+                    var campos = lines[i].Split(',');
 
                     if (campos.Length < 2)
                     {
@@ -325,34 +332,18 @@ namespace QuiniegolController
         /// <summary>
         /// Elimina un elemento del archivo.
         /// </summary>
-        /// <param name="fileName">
-        /// Nombre del archivo.
-        /// </param>
-        /// <param name="element">
-        /// Elemento que se desea eliminar.
-        /// </param>
-        /// <returns>
-        /// True si se eliminó correctamente.
-        /// </returns>
         public bool Remove(
             string fileName,
             T element)
         {
+            // No eliminamos físicamente usuarios.
+            // Para el Proyecto 2 utilizaremos Activo = false.
             return false;
         }
 
         /// <summary>
         /// Crea un elemento en el archivo.
         /// </summary>
-        /// <param name="fileName">
-        /// Nombre del archivo.
-        /// </param>
-        /// <param name="element">
-        /// Elemento que se desea crear.
-        /// </param>
-        /// <returns>
-        /// True si se creó correctamente.
-        /// </returns>
         public bool Create(
             string fileName,
             T element)
@@ -373,10 +364,13 @@ namespace QuiniegolController
                     (Usuario)(object)element;
 
                 var linea = string.Format(
-                    "{0},{1},{2}",
+                    "{0},{1},{2},{3},{4},{5}",
                     usuario.Nombre,
                     usuario.PaisPreferido,
-                    usuario.Puntos);
+                    usuario.Puntos,
+                    usuario.Rol,
+                    usuario.Contrasena,
+                    usuario.Activo);
 
                 File.AppendAllText(
                     fileName,

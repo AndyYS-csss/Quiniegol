@@ -51,7 +51,8 @@ namespace QuiniegolController
         /// <returns>Usuario encontrado o null.</returns>
         public Usuario FindUser(string nombre)
         {
-            if (this.Usuarios != null && this.Usuarios.Count > 0)
+            if (this.Usuarios != null &&
+                this.Usuarios.Count > 0)
             {
                 return this.Usuarios.Find(
                     usuario => usuario.Nombre == nombre);
@@ -72,6 +73,27 @@ namespace QuiniegolController
             string nombre,
             string paisPreferido)
         {
+            return RegisterUser(
+                fileName,
+                nombre,
+                paisPreferido,
+                string.Empty);
+        }
+
+        /// <summary>
+        /// Registra un nuevo usuario con contraseña.
+        /// </summary>
+        /// <param name="fileName">Archivo donde se guardará el usuario.</param>
+        /// <param name="nombre">Nombre completo del usuario.</param>
+        /// <param name="paisPreferido">País preferido.</param>
+        /// <param name="contrasena">Contraseña del usuario.</param>
+        /// <returns>True si el usuario fue registrado correctamente.</returns>
+        public bool RegisterUser(
+            string fileName,
+            string nombre,
+            string paisPreferido,
+            string contrasena)
+        {
             if (string.IsNullOrWhiteSpace(nombre) ||
                 string.IsNullOrWhiteSpace(paisPreferido))
             {
@@ -87,6 +109,10 @@ namespace QuiniegolController
                 nombre,
                 paisPreferido,
                 0);
+
+            usuario.Contrasena = contrasena ?? string.Empty;
+            usuario.Rol = "Usuario";
+            usuario.Activo = true;
 
             var created = this.DataHandler.Create(
                 fileName,
@@ -108,7 +134,9 @@ namespace QuiniegolController
         /// <param name="nombre">Nombre del usuario.</param>
         /// <param name="puntos">Nueva cantidad de puntos.</param>
         /// <returns>True si se actualizó; de lo contrario, false.</returns>
-        public bool UpdatePoints(string nombre, int puntos)
+        public bool UpdatePoints(
+            string nombre,
+            int puntos)
         {
             var usuario = this.FindUser(nombre);
 
@@ -120,6 +148,135 @@ namespace QuiniegolController
             usuario.Puntos = puntos;
 
             return true;
+        }
+
+        /// <summary>
+        /// Autentica un usuario utilizando su nombre y contraseña.
+        /// </summary>
+        /// <param name="nombre">Nombre del usuario.</param>
+        /// <param name="contrasena">Contraseña proporcionada.</param>
+        /// <returns>
+        /// El usuario autenticado si los datos son correctos;
+        /// de lo contrario, null.
+        /// </returns>
+        public Usuario AuthenticateUser(
+            string nombre,
+            string contrasena)
+        {
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(contrasena))
+            {
+                return null;
+            }
+
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return null;
+            }
+
+            if (!usuario.Activo)
+            {
+                return null;
+            }
+
+            if (usuario.Contrasena != contrasena)
+            {
+                return null;
+            }
+
+            return usuario;
+        }
+
+        /// <summary>
+        /// Cambia o restablece la contraseña de un usuario.
+        /// </summary>
+        /// <param name="nombre">Nombre del usuario.</param>
+        /// <param name="nuevaContrasena">Nueva contraseña.</param>
+        /// <returns>
+        /// True si la contraseña fue cambiada correctamente.
+        /// </returns>
+        public bool ResetPassword(
+            string nombre,
+            string nuevaContrasena)
+        {
+            if (string.IsNullOrWhiteSpace(nuevaContrasena))
+            {
+                return false;
+            }
+
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Contrasena = nuevaContrasena;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Desactiva un usuario.
+        /// </summary>
+        /// <param name="nombre">Nombre del usuario.</param>
+        /// <returns>
+        /// True si el usuario fue desactivado correctamente.
+        /// </returns>
+        public bool DeactivateUser(string nombre)
+        {
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Activo = false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Activa nuevamente un usuario.
+        /// </summary>
+        /// <param name="nombre">Nombre del usuario.</param>
+        /// <returns>
+        /// True si el usuario fue activado correctamente.
+        /// </returns>
+        public bool ActivateUser(string nombre)
+        {
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Activo = true;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determina si un usuario tiene el rol de administrador.
+        /// </summary>
+        /// <param name="nombre">Nombre del usuario.</param>
+        /// <returns>
+        /// True si el usuario es administrador.
+        /// </returns>
+        public bool IsAdministrator(string nombre)
+        {
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            return usuario.Rol == "Administrador";
         }
     }
 }
