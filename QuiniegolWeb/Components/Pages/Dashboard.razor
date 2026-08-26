@@ -1,0 +1,124 @@
+﻿@page "/dashboard"
+
+@using QuiniegolModels
+@using QuiniegolWeb.Services
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    @if (!Session.SesionIniciada)
+    {
+        <div class="alert alert-warning">
+            <h4>Sesión no iniciada</h4>
+            <p>Debe iniciar sesión para acceder al dashboard.</p>
+
+            <button class="btn btn-primary"
+                    @onclick="IrAlLogin">
+                Iniciar sesión
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <h1>Bienvenido a Quiniegol</h1>
+
+            <p class="lead">
+                Hola, <strong>@Session.UsuarioActual.Nombre</strong>.
+            </p>
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Mi información</h5>
+
+                        <p>
+                            <strong>Usuario:</strong>
+                            @Session.UsuarioActual.Nombre
+                        </p>
+
+                        <p>
+                            <strong>País preferido:</strong>
+                            @Session.UsuarioActual.PaisPreferido
+                        </p>
+
+                        <p>
+                            <strong>Rol:</strong>
+                            @Session.UsuarioActual.Rol
+                        </p>
+
+                        <p>
+                            <strong>Estado:</strong>
+                            @(Session.UsuarioActual.Activo ? "Activo" : "Inactivo")
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Mis puntos</h5>
+
+                        <h2>
+                            @Session.UsuarioActual.Puntos
+                        </h2>
+
+                        <p class="text-muted">
+                            Puntos acumulados en Quiniegol.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-body">
+
+                <h5 class="card-title">
+                    Opciones
+                </h5>
+
+                <p>
+                    Desde este dashboard podrás consultar
+                    tu información, puntos, pronósticos,
+                    notificaciones e insignias.
+                </p>
+
+            </div>
+        </div>
+
+        <div class="mt-4">
+
+            <button class="btn btn-danger"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private void IrAlLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+}

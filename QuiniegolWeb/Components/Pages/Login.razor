@@ -1,7 +1,13 @@
-﻿@using QuiniegolModels
+﻿@page "/login"
+
+@using QuiniegolController
+@using QuiniegolModels
 @using QuiniegolWeb.Services
 
+@rendermode InteractiveServer
+
 @inject SesionService Session
+@inject NavigationManager Navigation
 
 <PageTitle>Iniciar sesión - Quiniegol</PageTitle>
 
@@ -15,6 +21,7 @@
 
         <div class="form-group">
             <label>Usuario</label>
+
             <input class="form-control"
                    @bind="nombre"
                    placeholder="Ingrese su nombre" />
@@ -22,6 +29,7 @@
 
         <div class="form-group">
             <label>Contraseña</label>
+
             <input class="form-control"
                    type="password"
                    @bind="contrasena"
@@ -61,29 +69,55 @@
             return;
         }
 
-        // Por ahora buscamos el usuario mediante el SessionService.
-        // La validación completa de credenciales se incorporará
-        // en el siguiente paso.
-        Usuario usuario = Session.BuscarUsuario(nombre);
+        // Creamos el manejador de archivos.
+        var dataHandler = new FileHandler<Usuario>();
+
+        // Creamos el controlador de usuarios.
+        var usuarioController =
+            new UsuarioController(dataHandler);
+
+        // Ubicamos el archivo Usuarios.csv
+        // que pertenece al proyecto principal Quiniegol.
+        var archivoUsuarios = Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "Quiniegol",
+            "Data",
+            "Usuarios.csv");
+
+        archivoUsuarios = Path.GetFullPath(archivoUsuarios);
+
+        // Cargamos los usuarios existentes.
+        usuarioController.Load(archivoUsuarios);
+
+        // Autenticamos utilizando UsuarioController.
+        Usuario usuario =
+            usuarioController.AuthenticateUser(
+                nombre,
+                contrasena);
 
         if (usuario == null)
         {
-            mensaje = "El usuario no existe.";
+            mensaje =
+                "Usuario, contraseña incorrectos o usuario desactivado.";
+
             return;
         }
 
-        if (!usuario.Activo)
-        {
-            mensaje = "El usuario se encuentra desactivado.";
-            return;
-        }
-
-        if (usuario.Contrasena != contrasena)
-        {
-            mensaje = "La contraseña es incorrecta.";
-            return;
-        }
-
+        // Guardamos el usuario autenticado en la sesión.
         Session.IniciarSesion(usuario);
+
+        // Redirección según el rol.
+        if (usuario.Rol == "Administrador")
+        {
+            Navigation.NavigateTo("/admin");
+        }
+        else
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
     }
 }

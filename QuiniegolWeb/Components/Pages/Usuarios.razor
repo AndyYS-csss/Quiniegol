@@ -1,0 +1,593 @@
+﻿@page "/usuarios"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolController
+@using QuiniegolController.Abstractions
+@using QuiniegolWeb.Services
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Gestión de Usuarios - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1>Gestión de Usuarios</h1>
+
+            @if (Session.UsuarioActual is not null)
+            {
+                <p class="text-muted">
+                    Administrador: @Session.UsuarioActual.Nombre
+                </p>
+            }
+        </div>
+
+        <div>
+
+            <button class="btn btn-secondary me-2"
+                    @onclick="VolverAlPanel">
+                Volver al panel
+            </button>
+
+            <button class="btn btn-danger"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+
+        </div>
+
+    </div>
+
+    <hr />
+
+    @if (!autorizado)
+    {
+        <div class="alert alert-warning">
+            Verificando sesión...
+        </div>
+    }
+    else
+    {
+        <!-- MENSAJE -->
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert @(esError ? "alert-danger" : "alert-success")">
+                @mensaje
+            </div>
+        }
+
+        <!-- LISTA DE USUARIOS -->
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <h3>Usuarios registrados</h3>
+
+                        <p class="text-muted mb-0">
+                            Desde esta pantalla el administrador puede
+                            activar, desactivar y restablecer contraseñas.
+                        </p>
+                    </div>
+
+                    <span class="badge bg-primary">
+                        @usuarios.Count usuarios
+                    </span>
+
+                </div>
+
+                @if (cargando)
+                {
+                    <p>Cargando usuarios...</p>
+                }
+                else if (usuarios.Count == 0)
+                {
+                    <div class="alert alert-info">
+                        No hay usuarios registrados.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered table-hover">
+
+                            <thead class="table-dark">
+
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>País</th>
+                                    <th>Rol</th>
+                                    <th>Puntos</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var usuario in usuarios)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @usuario.Nombre
+                                        </td>
+
+                                        <td>
+                                            @usuario.PaisPreferido
+                                        </td>
+
+                                        <td>
+                                            @usuario.Rol
+                                        </td>
+
+                                        <td>
+                                            @usuario.Puntos
+                                        </td>
+
+                                        <td>
+
+                                            @if (usuario.Activo)
+                                            {
+                                                <span class="badge bg-success">
+                                                    Activo
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">
+                                                    Inactivo
+                                                </span>
+                                            }
+
+                                        </td>
+
+                                        <td>
+
+                                            <button class="btn btn-warning btn-sm me-1"
+                                                    @onclick="() => SeleccionarUsuario(usuario)">
+                                                Administrar
+                                            </button>
+
+                                            @if (usuario.Activo)
+                                            {
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="() => DesactivarUsuario(usuario)">
+                                                    Desactivar
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-success btn-sm"
+                                                        @onclick="() => ActivarUsuario(usuario)">
+                                                    Activar
+                                                </button>
+                                            }
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+
+        <!-- ADMINISTRACIÓN DEL USUARIO SELECCIONADO -->
+        @if (usuarioSeleccionado is not null)
+        {
+            <div class="card mt-4">
+
+                <div class="card-body">
+
+                    <h3>Administrar usuario</h3>
+
+                    <hr />
+
+                    <p>
+                        <strong>Usuario:</strong>
+                        @usuarioSeleccionado.Nombre
+                    </p>
+
+                    <p>
+                        <strong>Rol:</strong>
+                        @usuarioSeleccionado.Rol
+                    </p>
+
+                    <p>
+                        <strong>Estado:</strong>
+
+                        @if (usuarioSeleccionado.Activo)
+                        {
+                            <span class="badge bg-success">
+                                Activo
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">
+                                Inactivo
+                            </span>
+                        }
+                    </p>
+
+                    <!-- NUEVA CONTRASEÑA -->
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Nueva contraseña
+                        </label>
+
+                        <input type="password"
+                               class="form-control"
+                               @bind="nuevaContrasena"
+                               placeholder="Escriba la nueva contraseña" />
+
+                    </div>
+
+
+                    <button class="btn btn-primary me-2"
+                            @onclick="RestablecerContrasena">
+
+                        Restablecer contraseña
+
+                    </button>
+
+
+                    <button class="btn btn-secondary"
+                            @onclick="LimpiarSeleccion">
+
+                        Cancelar
+
+                    </button>
+
+                </div>
+
+            </div>
+        }
+    }
+
+</div>
+
+
+@code {
+
+    // ============================================================
+    // VARIABLES
+    // ============================================================
+
+    private List<Usuario> usuarios = new();
+
+    private Usuario? usuarioSeleccionado;
+
+    private string nuevaContrasena = string.Empty;
+
+    private string mensaje = string.Empty;
+
+    private bool esError = false;
+
+    private bool autorizado = false;
+
+    private bool cargando = true;
+
+    private bool inicializado = false;
+
+    private UsuarioController? usuarioController;
+
+
+    // ============================================================
+    // INICIALIZACIÓN
+    // ============================================================
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        InicializarPagina();
+    }
+
+
+    private void InicializarPagina()
+    {
+        // Verificamos que exista una sesión activa.
+        if (Session.UsuarioActual is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Verificamos que el usuario sea administrador.
+        if (Session.UsuarioActual.Rol != "Administrador")
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        autorizado = true;
+
+        // Creamos el manejador de archivos.
+        IDataHandler<Usuario> dataHandler =
+            new FileHandler<Usuario>();
+
+        // Creamos el controlador de usuarios.
+        usuarioController =
+            new UsuarioController(dataHandler);
+
+        // Ubicación del archivo Usuarios.csv.
+        string archivoUsuarios = Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "Quiniegol",
+            "Data",
+            "Usuarios.csv"
+        );
+
+        archivoUsuarios = Path.GetFullPath(archivoUsuarios);
+
+        // Cargamos los usuarios.
+        try
+        {
+            usuarios = usuarioController.Load(archivoUsuarios);
+
+            if (usuarios == null)
+            {
+                usuarios = new List<Usuario>();
+            }
+        }
+        catch
+        {
+            usuarios = new List<Usuario>();
+
+            mensaje =
+                "No fue posible cargar el archivo de usuarios.";
+
+            esError = true;
+        }
+
+        cargando = false;
+        inicializado = true;
+
+        StateHasChanged();
+    }
+
+
+    // ============================================================
+    // SELECCIONAR USUARIO
+    // ============================================================
+
+    private void SeleccionarUsuario(Usuario usuario)
+    {
+        usuarioSeleccionado = usuario;
+
+        nuevaContrasena = string.Empty;
+
+        mensaje = string.Empty;
+
+        esError = false;
+    }
+
+
+    // ============================================================
+    // RESTABLECER CONTRASEÑA
+    // ============================================================
+
+    private void RestablecerContrasena()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (usuarioController is null)
+        {
+            mensaje =
+                "No se pudo cargar el controlador de usuarios.";
+
+            esError = true;
+
+            return;
+        }
+
+        if (usuarioSeleccionado is null)
+        {
+            mensaje =
+                "Debe seleccionar un usuario.";
+
+            esError = true;
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(nuevaContrasena))
+        {
+            mensaje =
+                "Debe escribir una nueva contraseña.";
+
+            esError = true;
+
+            return;
+        }
+
+        bool resultado =
+            usuarioController.ResetPassword(
+                usuarioSeleccionado.Nombre,
+                nuevaContrasena
+            );
+
+        if (resultado)
+        {
+            mensaje =
+                $"La contraseña del usuario {usuarioSeleccionado.Nombre} fue restablecida correctamente.";
+
+            nuevaContrasena = string.Empty;
+
+            esError = false;
+        }
+        else
+        {
+            mensaje =
+                "No fue posible restablecer la contraseña.";
+
+            esError = true;
+        }
+    }
+
+
+    // ============================================================
+    // DESACTIVAR USUARIO
+    // ============================================================
+
+    private void DesactivarUsuario(Usuario usuario)
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (usuarioController is null)
+        {
+            mensaje =
+                "No se pudo cargar el controlador de usuarios.";
+
+            esError = true;
+
+            return;
+        }
+
+        // Evitamos que el administrador se desactive a sí mismo.
+        if (Session.UsuarioActual is not null &&
+            usuario.Nombre == Session.UsuarioActual.Nombre)
+        {
+            mensaje =
+                "El administrador no puede desactivar su propia cuenta.";
+
+            esError = true;
+
+            return;
+        }
+
+        bool resultado =
+            usuarioController.DeactivateUser(
+                usuario.Nombre
+            );
+
+        if (resultado)
+        {
+            mensaje =
+                $"El usuario {usuario.Nombre} fue desactivado correctamente.";
+
+            esError = false;
+
+            StateHasChanged();
+        }
+        else
+        {
+            mensaje =
+                "No fue posible desactivar el usuario.";
+
+            esError = true;
+        }
+    }
+
+
+    // ============================================================
+    // ACTIVAR USUARIO
+    // ============================================================
+
+    private void ActivarUsuario(Usuario usuario)
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (usuarioController is null)
+        {
+            mensaje =
+                "No se pudo cargar el controlador de usuarios.";
+
+            esError = true;
+
+            return;
+        }
+
+        bool resultado =
+            usuarioController.ActivateUser(
+                usuario.Nombre
+            );
+
+        if (resultado)
+        {
+            mensaje =
+                $"El usuario {usuario.Nombre} fue activado correctamente.";
+
+            esError = false;
+
+            StateHasChanged();
+        }
+        else
+        {
+            mensaje =
+                "No fue posible activar el usuario.";
+
+            esError = true;
+        }
+    }
+
+
+    // ============================================================
+    // LIMPIAR SELECCIÓN
+    // ============================================================
+
+    private void LimpiarSeleccion()
+    {
+        usuarioSeleccionado = null;
+
+        nuevaContrasena = string.Empty;
+
+        mensaje = string.Empty;
+
+        esError = false;
+    }
+
+
+    // ============================================================
+    // VOLVER AL PANEL
+    // ============================================================
+
+    private void VolverAlPanel()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+
+    // ============================================================
+    // CERRAR SESIÓN
+    // ============================================================
+
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+
+}

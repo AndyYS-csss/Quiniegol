@@ -1,0 +1,237 @@
+﻿@page "/admin"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolWeb.Services
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Panel de Administrador - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1>Panel de Administrador</h1>
+
+            @if (Session.UsuarioActual is not null)
+            {
+                <p class="text-muted">
+                    Bienvenido, @Session.UsuarioActual.Nombre
+                </p>
+            }
+        </div>
+
+        <button class="btn btn-danger"
+                @onclick="CerrarSesion">
+            Cerrar sesión
+        </button>
+
+    </div>
+
+    <hr />
+
+    <div class="row">
+
+        <!-- GESTIÓN DE USUARIOS -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Gestión de usuarios</h4>
+
+                    <p>
+                        Activar o desactivar usuarios,
+                        administrar cuentas y restablecer contraseñas.
+                    </p>
+
+                    <button class="btn btn-primary"
+                            @onclick="GestionarUsuarios">
+                        Gestionar usuarios
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- PARTIDOS -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Mantenimiento de partidos</h4>
+
+                    <p>
+                        Crear, modificar y administrar
+                        los partidos del sistema.
+                    </p>
+
+                    <button class="btn btn-primary">
+                        Gestionar partidos
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- REPORTES -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Reportes</h4>
+
+                    <p>
+                        Consultar y generar reportes
+                        del sistema.
+                    </p>
+
+                    <button class="btn btn-primary">
+                        Ver reportes
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="row">
+
+        <!-- PRONÓSTICOS -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Pronósticos</h4>
+
+                    <p>
+                        Consultar información relacionada
+                        con los pronósticos registrados.
+                    </p>
+
+                    <button class="btn btn-secondary">
+                        Ver pronósticos
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- NOTIFICACIONES -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Notificaciones</h4>
+
+                    <p>
+                        Administrar las notificaciones
+                        relacionadas con los partidos.
+                    </p>
+
+                    <button class="btn btn-secondary">
+                        Ver notificaciones
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- INSIGNIAS -->
+        <div class="col-md-4 mb-4">
+
+            <div class="card h-100">
+
+                <div class="card-body">
+
+                    <h4>Insignias</h4>
+
+                    <p>
+                        Consultar las insignias y logros
+                        disponibles para los usuarios.
+                    </p>
+
+                    <button class="btn btn-secondary">
+                        Ver insignias
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+@code {
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        // Verificamos que exista una sesión activa.
+        if (Session.UsuarioActual is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Verificamos que el usuario sea administrador.
+        if (Session.UsuarioActual.Rol != "Administrador")
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+    }
+
+
+    // Abre la pantalla de Gestión de usuarios.
+    private void GestionarUsuarios()
+    {
+        Navigation.NavigateTo("/usuarios");
+    }
+
+
+    // Cierra la sesión actual.
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+
+}

@@ -189,14 +189,42 @@ namespace QuiniegolController
             return usuario;
         }
 
+        // ==========================================================
+        // RESET DE CONTRASEÑA
+        // ==========================================================
+
         /// <summary>
-        /// Cambia o restablece la contraseña de un usuario.
+        /// Restablece la contraseña de un usuario
+        /// y guarda el cambio en el archivo.
         /// </summary>
-        /// <param name="nombre">Nombre del usuario.</param>
-        /// <param name="nuevaContrasena">Nueva contraseña.</param>
-        /// <returns>
-        /// True si la contraseña fue cambiada correctamente.
-        /// </returns>
+        public bool ResetPassword(
+            string fileName,
+            string nombre,
+            string nuevaContrasena)
+        {
+            if (string.IsNullOrWhiteSpace(nuevaContrasena))
+            {
+                return false;
+            }
+
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Contrasena = nuevaContrasena;
+
+            return this.DataHandler.Update(
+                fileName,
+                usuario);
+        }
+
+        /// <summary>
+        /// Restablece la contraseña únicamente en memoria.
+        /// Se mantiene para compatibilidad con las pruebas existentes.
+        /// </summary>
         public bool ResetPassword(
             string nombre,
             string nuevaContrasena)
@@ -218,13 +246,35 @@ namespace QuiniegolController
             return true;
         }
 
+        // ==========================================================
+        // DESACTIVAR USUARIO
+        // ==========================================================
+
         /// <summary>
-        /// Desactiva un usuario.
+        /// Desactiva un usuario y guarda el cambio en el archivo.
         /// </summary>
-        /// <param name="nombre">Nombre del usuario.</param>
-        /// <returns>
-        /// True si el usuario fue desactivado correctamente.
-        /// </returns>
+        public bool DeactivateUser(
+            string fileName,
+            string nombre)
+        {
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Activo = false;
+
+            return this.DataHandler.Update(
+                fileName,
+                usuario);
+        }
+
+        /// <summary>
+        /// Desactiva un usuario únicamente en memoria.
+        /// Se mantiene para compatibilidad con las pruebas existentes.
+        /// </summary>
         public bool DeactivateUser(string nombre)
         {
             var usuario = this.FindUser(nombre);
@@ -239,13 +289,35 @@ namespace QuiniegolController
             return true;
         }
 
+        // ==========================================================
+        // ACTIVAR USUARIO
+        // ==========================================================
+
         /// <summary>
-        /// Activa nuevamente un usuario.
+        /// Activa nuevamente un usuario y guarda el cambio en el archivo.
         /// </summary>
-        /// <param name="nombre">Nombre del usuario.</param>
-        /// <returns>
-        /// True si el usuario fue activado correctamente.
-        /// </returns>
+        public bool ActivateUser(
+            string fileName,
+            string nombre)
+        {
+            var usuario = this.FindUser(nombre);
+
+            if (usuario == null)
+            {
+                return false;
+            }
+
+            usuario.Activo = true;
+
+            return this.DataHandler.Update(
+                fileName,
+                usuario);
+        }
+
+        /// <summary>
+        /// Activa nuevamente un usuario únicamente en memoria.
+        /// Se mantiene para compatibilidad con las pruebas existentes.
+        /// </summary>
         public bool ActivateUser(string nombre)
         {
             var usuario = this.FindUser(nombre);
@@ -259,6 +331,10 @@ namespace QuiniegolController
 
             return true;
         }
+
+        // ==========================================================
+        // ADMINISTRADOR
+        // ==========================================================
 
         /// <summary>
         /// Determina si un usuario tiene el rol de administrador.
