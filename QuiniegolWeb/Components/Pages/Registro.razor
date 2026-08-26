@@ -1,0 +1,200 @@
+﻿@page "/registro"
+
+@using QuiniegolController
+@using QuiniegolModels
+
+@rendermode InteractiveServer
+
+@inject NavigationManager Navigation
+
+<PageTitle>Registro - Quiniegol</PageTitle>
+
+<div class="login-container">
+
+    <div class="login-card">
+
+        <h1>Quiniegol</h1>
+
+        <h3>Crear cuenta</h3>
+
+        <div class="form-group">
+            <label>Nombre</label>
+
+            <input class="form-control"
+                   @bind="nombre"
+                   placeholder="Ingrese su nombre" />
+        </div>
+
+        <div class="form-group">
+            <label>País</label>
+
+            <input class="form-control"
+                   @bind="pais"
+                   placeholder="Ingrese su país" />
+        </div>
+
+        <div class="form-group">
+            <label>Contraseña</label>
+
+            <input class="form-control"
+                   type="password"
+                   @bind="contrasena"
+                   placeholder="Ingrese su contraseña" />
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(mensaje))
+        {
+            <div class="alert @(registroCorrecto ? "alert-success" : "alert-danger")">
+                @mensaje
+            </div>
+        }
+
+        <button class="btn btn-success w-100"
+                @onclick="RegistrarUsuario">
+            Registrarse
+        </button>
+
+        <div class="text-center mt-3">
+
+            <button class="btn btn-outline-secondary w-100"
+                    @onclick="VolverAlLogin">
+                Volver al Login
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private string nombre = string.Empty;
+
+    private string pais = string.Empty;
+
+    private string contrasena = string.Empty;
+
+    private string mensaje = string.Empty;
+
+    private bool registroCorrecto = false;
+
+
+    private void RegistrarUsuario()
+    {
+        mensaje = string.Empty;
+        registroCorrecto = false;
+
+        // ==========================================
+        // VALIDAR CAMPOS
+        // ==========================================
+
+        if (string.IsNullOrWhiteSpace(nombre) ||
+            string.IsNullOrWhiteSpace(pais) ||
+            string.IsNullOrWhiteSpace(contrasena))
+        {
+            mensaje =
+                "Debe completar todos los campos.";
+
+            return;
+        }
+
+
+        // ==========================================
+        // UBICAR ARCHIVO DE USUARIOS
+        // ==========================================
+
+        var archivoUsuarios = Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "..",
+            "Quiniegol",
+            "Data",
+            "Usuarios.csv");
+
+        archivoUsuarios =
+            Path.GetFullPath(archivoUsuarios);
+
+
+        // ==========================================
+        // CREAR CONTROLADOR
+        // ==========================================
+
+        var dataHandler =
+            new FileHandler<Usuario>();
+
+        var usuarioController =
+            new UsuarioController(dataHandler);
+
+
+        // ==========================================
+        // CARGAR USUARIOS EXISTENTES
+        // ==========================================
+
+        usuarioController.Load(
+            archivoUsuarios);
+
+
+        // ==========================================
+        // VERIFICAR NOMBRE REPETIDO
+        // ==========================================
+
+        var usuarioExistente =
+            usuarioController.FindUser(nombre);
+
+        if (usuarioExistente != null)
+        {
+            mensaje =
+                "Ya existe un usuario con ese nombre.";
+
+            return;
+        }
+
+
+        // ==========================================
+        // REGISTRAR USUARIO
+        // ==========================================
+
+        bool creado =
+            usuarioController.RegisterUser(
+                archivoUsuarios,
+                nombre,
+                pais,
+                contrasena);
+
+
+        if (!creado)
+        {
+            mensaje =
+                "No fue posible registrar el usuario.";
+
+            return;
+        }
+
+
+        // ==========================================
+        // REGISTRO CORRECTO
+        // ==========================================
+
+        registroCorrecto = true;
+
+        mensaje =
+            "Usuario registrado correctamente.";
+
+        // Limpiamos los campos.
+        nombre = string.Empty;
+
+        pais = string.Empty;
+
+        contrasena = string.Empty;
+    }
+
+
+    private void VolverAlLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+
+}

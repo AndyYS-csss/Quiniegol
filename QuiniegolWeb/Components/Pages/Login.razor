@@ -43,10 +43,23 @@
             </div>
         }
 
-        <button class="btn btn-primary"
+        <button class="btn btn-primary w-100"
                 @onclick="IniciarSesion">
             Iniciar sesión
         </button>
+
+        <div class="text-center mt-3">
+
+            <p class="mb-2">
+                ¿No tiene una cuenta?
+            </p>
+
+            <button class="btn btn-outline-success w-100"
+                    @onclick="IrARegistro">
+                Registrarse
+            </button>
+
+        </div>
 
     </div>
 
@@ -58,6 +71,7 @@
     private string contrasena = string.Empty;
     private string mensaje = string.Empty;
 
+
     private void IniciarSesion()
     {
         mensaje = string.Empty;
@@ -65,19 +79,21 @@
         if (string.IsNullOrWhiteSpace(nombre) ||
             string.IsNullOrWhiteSpace(contrasena))
         {
-            mensaje = "Debe ingresar usuario y contraseña.";
+            mensaje =
+                "Debe ingresar usuario y contraseña.";
+
             return;
         }
 
         // Creamos el manejador de archivos.
-        var dataHandler = new FileHandler<Usuario>();
+        var dataHandler =
+            new FileHandler<Usuario>();
 
         // Creamos el controlador de usuarios.
         var usuarioController =
             new UsuarioController(dataHandler);
 
-        // Ubicamos el archivo Usuarios.csv
-        // que pertenece al proyecto principal Quiniegol.
+        // Ubicamos el archivo Usuarios.csv.
         var archivoUsuarios = Path.Combine(
             AppContext.BaseDirectory,
             "..",
@@ -88,10 +104,12 @@
             "Data",
             "Usuarios.csv");
 
-        archivoUsuarios = Path.GetFullPath(archivoUsuarios);
+        archivoUsuarios =
+            Path.GetFullPath(archivoUsuarios);
 
         // Cargamos los usuarios existentes.
-        usuarioController.Load(archivoUsuarios);
+        usuarioController.Load(
+            archivoUsuarios);
 
         // Autenticamos utilizando UsuarioController.
         Usuario usuario =
@@ -119,5 +137,11 @@
         {
             Navigation.NavigateTo("/dashboard");
         }
+    }
+
+
+    private void IrARegistro()
+    {
+        Navigation.NavigateTo("/registro");
     }
 }

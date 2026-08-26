@@ -256,13 +256,11 @@
                                 <table class="table table-bordered table-hover">
 
                                     <thead class="table-dark">
-
                                         <tr>
                                             <th>Posición</th>
                                             <th>Usuario</th>
                                             <th>Aciertos</th>
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
@@ -290,21 +288,18 @@
                                 <table class="table table-bordered table-hover">
 
                                     <thead class="table-dark">
-
                                         <tr>
                                             <th>Posición</th>
                                             <th>Usuario</th>
                                             <th>Aciertos</th>
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
 
                                         @foreach (var usuario in usuariosConMasAciertos
                                                                         .Take(3)
-                                                                        .Select((usuario, indice) =>
-                                                                        new
+                                                                        .Select((usuario, indice) => new
                                                                         {
                                                                             Usuario = usuario,
                                                                             Posicion = indice + 1
@@ -331,21 +326,18 @@
                                 <table class="table table-bordered table-hover">
 
                                     <thead class="table-dark">
-
                                         <tr>
                                             <th>Posición</th>
                                             <th>Usuario</th>
                                             <th>Aciertos</th>
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
 
                                         @foreach (var usuario in usuariosConMasAciertos
                                                                         .Take(5)
-                                                                        .Select((usuario, indice) =>
-                                                                        new
+                                                                        .Select((usuario, indice) => new
                                                                         {
                                                                             Usuario = usuario,
                                                                             Posicion = indice + 1
@@ -408,21 +400,18 @@
                             <table class="table table-bordered table-hover">
 
                                 <thead class="table-dark">
-
                                     <tr>
                                         <th>Posición</th>
                                         <th>Local</th>
                                         <th>Visitante</th>
                                         <th>Pronósticos</th>
                                     </tr>
-
                                 </thead>
 
                                 <tbody>
 
                                     @foreach (var partido in partidosConMasPronosticos
-                                                                .Select((partido, indice) =>
-                                                                new
+                                                                .Select((partido, indice) => new
                                                                 {
                                                                     Partido = partido,
                                                                     Posicion = indice + 1
@@ -561,14 +550,12 @@
                                 <table class="table table-bordered table-hover">
 
                                     <thead class="table-dark">
-
                                         <tr>
                                             <th>Local</th>
                                             <th>Visitante</th>
                                             <th>Resultado</th>
                                             <th>Aciertos</th>
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
@@ -715,6 +702,8 @@
                 "Partidos.csv"
             );
 
+            archivoPartidos = Path.GetFullPath(archivoPartidos);
+
             partidos =
                 partidoController.Load(archivoPartidos);
 
@@ -742,6 +731,8 @@
                 "Pronosticos.csv"
             );
 
+            archivoPronosticos = Path.GetFullPath(archivoPronosticos);
+
             pronosticos =
                 pronosticoDataHandler.Load(archivoPronosticos);
 
@@ -756,6 +747,11 @@
             // ==========================================
 
             GenerarResultadoMasRepetido();
+
+            // COMPROBACIÓN TEMPORAL
+            mensaje =
+                $"Partidos cargados: {partidos.Count} | " +
+                $"Finalizados: {partidos.Count(p => p.Finalizado)}";
 
             GenerarPartidoConMasAciertos();
 

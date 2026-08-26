@@ -50,12 +50,28 @@ namespace QuiniegolController
                         lineElement[2],
                         lineElement[3]);
 
-                    var fecha = DateTime.Parse(lineElement[4]);
+                    var fecha = DateTime.Parse(
+                        lineElement[4]);
 
                     var partido = new Partido(
                         local,
                         visitante,
                         fecha);
+
+                    // Proyecto 2:
+                    // Local, GrupoLocal, Visitante, GrupoVisitante,
+                    // Fecha, GolesLocal, GolesVisitante, Finalizado
+                    if (lineElement.Length >= 8)
+                    {
+                        partido.GolesLocal =
+                            int.Parse(lineElement[5]);
+
+                        partido.GolesVisitante =
+                            int.Parse(lineElement[6]);
+
+                        partido.Finalizado =
+                            bool.Parse(lineElement[7]);
+                    }
 
                     data.Add((T)(object)partido);
                 }
@@ -86,7 +102,9 @@ namespace QuiniegolController
                 else if (typeof(T) == typeof(Notificacion))
                 {
                     var mensaje = lineElement[0];
-                    var fecha = DateTime.Parse(lineElement[1]);
+
+                    var fecha = DateTime.Parse(
+                        lineElement[1]);
 
                     var notificacion = new Notificacion(
                         mensaje,
@@ -106,17 +124,23 @@ namespace QuiniegolController
                         lineElement[1],
                         int.Parse(lineElement[2]));
 
-                    // Compatibilidad con usuarios del Proyecto 1.
+                    // Compatibilidad con usuarios
+                    // del Proyecto 1.
                     usuario.Rol = "Usuario";
                     usuario.Contrasena = "1234";
                     usuario.Activo = true;
 
                     // Usuarios del Proyecto 2:
-                    // Nombre, País, Puntos, Rol, Contraseña, Activo
+                    // Nombre, País, Puntos, Rol,
+                    // Contraseña, Activo
                     if (lineElement.Length >= 6)
                     {
-                        usuario.Rol = lineElement[3];
-                        usuario.Contrasena = lineElement[4];
+                        usuario.Rol =
+                            lineElement[3];
+
+                        usuario.Contrasena =
+                            lineElement[4];
+
                         usuario.Activo =
                             bool.Parse(lineElement[5]);
                     }
@@ -204,7 +228,8 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos = lines[i].Split(',');
+                    var campos =
+                        lines[i].Split(',');
 
                     if (campos.Length < 5)
                     {
@@ -212,21 +237,33 @@ namespace QuiniegolController
                     }
 
                     bool mismoPartido =
-                        campos[0] == partido.Local.Nombre &&
-                        campos[2] == partido.Visitante.Nombre;
+                        campos[0] ==
+                            partido.Local.Nombre &&
+                        campos[2] ==
+                            partido.Visitante.Nombre;
 
                     if (mismoPartido)
                     {
+                        // Proyecto 2:
+                        // Local, GrupoLocal, Visitante,
+                        // GrupoVisitante, Fecha,
+                        // GolesLocal, GolesVisitante,
+                        // Finalizado
+
                         lines[i] = string.Format(
-                            "{0},{1},{2},{3},{4}",
+                            "{0},{1},{2},{3},{4},{5},{6},{7}",
                             partido.Local.Nombre,
                             partido.Local.Grupo,
                             partido.Visitante.Nombre,
                             partido.Visitante.Grupo,
                             partido.Fecha.ToString(
-                                "yyyy-MM-dd HH:mm:ss"));
+                                "yyyy-MM-dd HH:mm:ss"),
+                            partido.GolesLocal,
+                            partido.GolesVisitante,
+                            partido.Finalizado);
 
                         actualizado = true;
+
                         break;
                     }
                 }
@@ -251,14 +288,16 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos = lines[i].Split(',');
+                    var campos =
+                        lines[i].Split(',');
 
                     if (campos.Length < 3)
                     {
                         continue;
                     }
 
-                    if (campos[0] == usuario.Nombre)
+                    if (campos[0] ==
+                        usuario.Nombre)
                     {
                         lines[i] = string.Format(
                             "{0},{1},{2},{3},{4},{5}",
@@ -270,6 +309,7 @@ namespace QuiniegolController
                             usuario.Activo);
 
                         actualizado = true;
+
                         break;
                     }
                 }
@@ -294,7 +334,8 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos = lines[i].Split(',');
+                    var campos =
+                        lines[i].Split(',');
 
                     if (campos.Length < 6)
                     {
@@ -321,6 +362,7 @@ namespace QuiniegolController
                             pronostico.Puntos);
 
                         actualizado = true;
+
                         break;
                     }
                 }
@@ -345,7 +387,8 @@ namespace QuiniegolController
                         continue;
                     }
 
-                    var campos = lines[i].Split(',');
+                    var campos =
+                        lines[i].Split(',');
 
                     if (campos.Length < 2)
                     {
@@ -361,6 +404,7 @@ namespace QuiniegolController
                             notificacion.Fecha);
 
                         actualizado = true;
+
                         break;
                     }
                 }
@@ -388,7 +432,8 @@ namespace QuiniegolController
             T element)
         {
             // No eliminamos físicamente usuarios.
-            // Para el Proyecto 2 utilizaremos Activo = false.
+            // Para el Proyecto 2 utilizaremos
+            // Activo = false.
             return false;
         }
 
