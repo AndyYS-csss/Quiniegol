@@ -22,11 +22,11 @@ namespace QuiniegolTests
 
             File.WriteAllText(
                 archivoPrueba,
-                "Nombre,PaisPreferido,Puntos" +
+                "Nombre,PaisPreferido,Puntos,Rol,Contrasena,Activo" +
                 Environment.NewLine +
-                "Carlos,Costa Rica,100" +
+                "Carlos,Costa Rica,100,Usuario,1234,true" +
                 Environment.NewLine +
-                "Ana,Mexico,200");
+                "Ana,Mexico,200,Administrador,admin123,true");
         }
 
         [TestCleanup]
@@ -101,6 +101,32 @@ namespace QuiniegolTests
             Assert.AreEqual("Luis", usuario.Nombre);
             Assert.AreEqual("Panama", usuario.PaisPreferido);
             Assert.AreEqual(0, usuario.Puntos);
+            Assert.AreEqual("Usuario", usuario.Rol);
+            Assert.IsTrue(usuario.Activo);
+        }
+
+        [TestMethod]
+        public void RegisterUser_DebeRegistrarUsuarioConContrasena()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.RegisterUser(
+                archivoPrueba,
+                "Luis",
+                "Panama",
+                "12345");
+
+            Assert.IsTrue(resultado);
+
+            var usuario = controller.FindUser("Luis");
+
+            Assert.IsNotNull(usuario);
+            Assert.AreEqual("12345", usuario.Contrasena);
+            Assert.AreEqual("Usuario", usuario.Rol);
+            Assert.IsTrue(usuario.Activo);
         }
 
         [TestMethod]
@@ -201,6 +227,228 @@ namespace QuiniegolTests
             Assert.AreEqual(
                 0,
                 usuario.Puntos);
+        }
+
+        [TestMethod]
+        public void AuthenticateUser_DebeAutenticarUsuarioCorrectamente()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var usuario = controller.AuthenticateUser(
+                "Carlos",
+                "1234");
+
+            Assert.IsNotNull(usuario);
+            Assert.AreEqual("Carlos", usuario.Nombre);
+        }
+
+        [TestMethod]
+        public void AuthenticateUser_DebeRechazarContrasenaIncorrecta()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var usuario = controller.AuthenticateUser(
+                "Carlos",
+                "incorrecta");
+
+            Assert.IsNull(usuario);
+        }
+
+        [TestMethod]
+        public void AuthenticateUser_DebeRechazarUsuarioInexistente()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var usuario = controller.AuthenticateUser(
+                "NoExiste",
+                "1234");
+
+            Assert.IsNull(usuario);
+        }
+
+        [TestMethod]
+        public void AuthenticateUser_DebeRechazarUsuarioDesactivado()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            controller.DeactivateUser("Carlos");
+
+            var usuario = controller.AuthenticateUser(
+                "Carlos",
+                "1234");
+
+            Assert.IsNull(usuario);
+        }
+
+        [TestMethod]
+        public void ResetPassword_DebeCambiarLaContrasena()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.ResetPassword(
+                "Carlos",
+                "nueva123");
+
+            Assert.IsTrue(resultado);
+
+            var usuario = controller.AuthenticateUser(
+                "Carlos",
+                "nueva123");
+
+            Assert.IsNotNull(usuario);
+        }
+
+        [TestMethod]
+        public void ResetPassword_DebeRetornarFalseSiUsuarioNoExiste()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.ResetPassword(
+                "NoExiste",
+                "nueva123");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void ResetPassword_NoDebeAceptarContrasenaVacia()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.ResetPassword(
+                "Carlos",
+                "");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void DeactivateUser_DebeDesactivarUsuario()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.DeactivateUser("Carlos");
+
+            Assert.IsTrue(resultado);
+
+            var usuario = controller.FindUser("Carlos");
+
+            Assert.IsNotNull(usuario);
+            Assert.IsFalse(usuario.Activo);
+        }
+
+        [TestMethod]
+        public void DeactivateUser_DebeRetornarFalseSiUsuarioNoExiste()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.DeactivateUser(
+                "NoExiste");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void ActivateUser_DebeActivarUsuario()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            controller.DeactivateUser("Carlos");
+
+            var resultado = controller.ActivateUser("Carlos");
+
+            Assert.IsTrue(resultado);
+
+            var usuario = controller.FindUser("Carlos");
+
+            Assert.IsNotNull(usuario);
+            Assert.IsTrue(usuario.Activo);
+        }
+
+        [TestMethod]
+        public void ActivateUser_DebeRetornarFalseSiUsuarioNoExiste()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado = controller.ActivateUser(
+                "NoExiste");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void IsAdministrator_DebeRetornarTrueParaAdministrador()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.IsAdministrator("Ana");
+
+            Assert.IsTrue(resultado);
+        }
+
+        [TestMethod]
+        public void IsAdministrator_DebeRetornarFalseParaUsuarioNormal()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.IsAdministrator("Carlos");
+
+            Assert.IsFalse(resultado);
+        }
+
+        [TestMethod]
+        public void IsAdministrator_DebeRetornarFalseSiUsuarioNoExiste()
+        {
+            var dataHandler = new FileHandler<Usuario>();
+            var controller = new UsuarioController(dataHandler);
+
+            controller.Load(archivoPrueba);
+
+            var resultado =
+                controller.IsAdministrator("NoExiste");
+
+            Assert.IsFalse(resultado);
         }
     }
 }
