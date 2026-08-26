@@ -101,7 +101,8 @@
                         del sistema.
                     </p>
 
-                    <button class="btn btn-primary">
+                    <button class="btn btn-primary"
+                            @onclick="VerReportes">
                         Ver reportes
                     </button>
 
@@ -231,6 +232,13 @@
     private void GestionarPartidos()
     {
         Navigation.NavigateTo("/partidos");
+    }
+
+
+    // Abre la pantalla de Reportes.
+    private void VerReportes()
+    {
+        Navigation.NavigateTo("/reportes");
     }
 
 

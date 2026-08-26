@@ -1,0 +1,1211 @@
+﻿@page "/reportes"
+@rendermode InteractiveServer
+
+@using QuiniegolModels
+@using QuiniegolWeb.Services
+@using QuiniegolController
+@using System.IO
+@using System.Text
+
+@inject SesionService Session
+@inject NavigationManager Navigation
+
+<PageTitle>Reportes - Quiniegol</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h1>Reportes</h1>
+
+            @if (Session.UsuarioActual is not null)
+            {
+                <p class="text-muted">
+                    Administrador: @Session.UsuarioActual.Nombre
+                </p>
+            }
+        </div>
+
+        <div>
+
+            <button class="btn btn-secondary me-2"
+                    @onclick="VolverAlPanel">
+                Volver al panel
+            </button>
+
+            <button class="btn btn-danger"
+                    @onclick="CerrarSesion">
+                Cerrar sesión
+            </button>
+
+        </div>
+
+    </div>
+
+    <hr />
+
+    @if (!autorizado)
+    {
+        <div class="alert alert-warning">
+            Verificando sesión...
+        </div>
+    }
+    else
+    {
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div>
+                        <h3>Reportes del sistema</h3>
+
+                        <p class="text-muted mb-0">
+                            Reportes disponibles para el administrador.
+                        </p>
+                    </div>
+
+                    <span class="badge bg-primary">
+                        @partidos.Count partidos
+                    </span>
+
+                </div>
+
+                @if (mensaje != string.Empty)
+                {
+                    <div class="alert @(esError ? "alert-danger" : "alert-success")">
+                        @mensaje
+                    </div>
+                }
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 1 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            1. Resultado más repetido
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra el marcador que más veces se ha repetido
+                            entre los partidos finalizados.
+                        </p>
+
+                        @if (resultadoMasRepetido != null)
+                        {
+                            <div class="row">
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-info">
+
+                                        <strong>Resultado:</strong>
+
+                                        <span class="fs-4 ms-2">
+                                            @resultadoMasRepetido.Resultado
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-success">
+
+                                        <strong>Veces repetido:</strong>
+
+                                        <span class="fs-4 ms-2">
+                                            @resultadoMasRepetido.Cantidad
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaResultado()"
+                               download="ReporteResultadoMasRepetido.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen partidos finalizados suficientes
+                                para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 2 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            2. Partido con más aciertos
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra el partido que obtuvo la mayor cantidad
+                            de pronósticos con puntos.
+                        </p>
+
+                        @if (partidoConMasAciertos != null)
+                        {
+                            <div class="row">
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-info">
+
+                                        <strong>Partido:</strong>
+
+                                        <span class="fs-5 ms-2">
+                                            @partidoConMasAciertos.Local
+                                            vs
+                                            @partidoConMasAciertos.Visitante
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-success">
+
+                                        <strong>Aciertos:</strong>
+
+                                        <span class="fs-4 ms-2">
+                                            @partidoConMasAciertos.Aciertos
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaPartidoMasAciertos()"
+                               download="ReportePartidoConMasAciertos.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen pronósticos con aciertos
+                                suficientes para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 3 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            3. Usuarios con más aciertos
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra los usuarios con mayor cantidad de
+                            pronósticos acertados en los niveles Top 1,
+                            Top 3 y Top 5.
+                        </p>
+
+                        @if (usuariosConMasAciertos.Count > 0)
+                        {
+                            <div class="mb-4">
+
+                                <h5>Top 1</h5>
+
+                                <table class="table table-bordered table-hover">
+
+                                    <thead class="table-dark">
+
+                                        <tr>
+                                            <th>Posición</th>
+                                            <th>Usuario</th>
+                                            <th>Aciertos</th>
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var usuario in usuariosConMasAciertos.Take(1))
+                                        {
+                                            <tr>
+                                                <td>1</td>
+                                                <td>@usuario.NombreUsuario</td>
+                                                <td>@usuario.Aciertos</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            <div class="mb-4">
+
+                                <h5>Top 3</h5>
+
+                                <table class="table table-bordered table-hover">
+
+                                    <thead class="table-dark">
+
+                                        <tr>
+                                            <th>Posición</th>
+                                            <th>Usuario</th>
+                                            <th>Aciertos</th>
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var usuario in usuariosConMasAciertos
+                                                                        .Take(3)
+                                                                        .Select((usuario, indice) =>
+                                                                        new
+                                                                        {
+                                                                            Usuario = usuario,
+                                                                            Posicion = indice + 1
+                                                                        }))
+                                        {
+                                            <tr>
+                                                <td>@usuario.Posicion</td>
+                                                <td>@usuario.Usuario.NombreUsuario</td>
+                                                <td>@usuario.Usuario.Aciertos</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            <div class="mb-4">
+
+                                <h5>Top 5</h5>
+
+                                <table class="table table-bordered table-hover">
+
+                                    <thead class="table-dark">
+
+                                        <tr>
+                                            <th>Posición</th>
+                                            <th>Usuario</th>
+                                            <th>Aciertos</th>
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var usuario in usuariosConMasAciertos
+                                                                        .Take(5)
+                                                                        .Select((usuario, indice) =>
+                                                                        new
+                                                                        {
+                                                                            Usuario = usuario,
+                                                                            Posicion = indice + 1
+                                                                        }))
+                                        {
+                                            <tr>
+                                                <td>@usuario.Posicion</td>
+                                                <td>@usuario.Usuario.NombreUsuario</td>
+                                                <td>@usuario.Usuario.Aciertos</td>
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaUsuariosMasAciertos()"
+                               download="ReporteUsuariosConMasAciertos.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen usuarios con aciertos suficientes
+                                para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 4 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            4. Partidos con más pronósticos
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra los partidos ordenados de mayor a menor
+                            cantidad de pronósticos registrados.
+                        </p>
+
+                        @if (partidosConMasPronosticos.Count > 0)
+                        {
+                            <table class="table table-bordered table-hover">
+
+                                <thead class="table-dark">
+
+                                    <tr>
+                                        <th>Posición</th>
+                                        <th>Local</th>
+                                        <th>Visitante</th>
+                                        <th>Pronósticos</th>
+                                    </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                    @foreach (var partido in partidosConMasPronosticos
+                                                                .Select((partido, indice) =>
+                                                                new
+                                                                {
+                                                                    Partido = partido,
+                                                                    Posicion = indice + 1
+                                                                }))
+                                    {
+                                        <tr>
+                                            <td>@partido.Posicion</td>
+                                            <td>@partido.Partido.Local</td>
+                                            <td>@partido.Partido.Visitante</td>
+                                            <td>@partido.Partido.Pronosticos</td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+
+                            </table>
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaPartidosMasPronosticos()"
+                               download="ReportePartidosConMasPronosticos.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen pronósticos registrados
+                                para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 5 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            5. Promedio de goles
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra el promedio de goles registrados en los
+                            partidos finalizados.
+                        </p>
+
+                        @if (promedioGoles.HasValue)
+                        {
+                            <div class="row">
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-info">
+
+                                        <strong>
+                                            Promedio de goles:
+                                        </strong>
+
+                                        <span class="fs-4 ms-2">
+                                            @promedioGoles.Value.ToString("0.00")
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <div class="alert alert-success">
+
+                                        <strong>
+                                            Partidos analizados:
+                                        </strong>
+
+                                        <span class="fs-4 ms-2">
+                                            @partidosFinalizadosCantidad
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaPromedioGoles()"
+                               download="ReportePromedioDeGoles.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen partidos finalizados suficientes
+                                para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORTE 6 -->
+                <!-- ================================================= -->
+
+                <div class="card mb-4">
+
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="mb-0">
+                            6. Partido sin aciertos
+                        </h4>
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="text-muted">
+                            Muestra los partidos finalizados que no tienen
+                            ningún pronóstico con aciertos.
+                        </p>
+
+                        @if (partidosSinAciertos.Count > 0)
+                        {
+                            <div class="table-responsive">
+
+                                <table class="table table-bordered table-hover">
+
+                                    <thead class="table-dark">
+
+                                        <tr>
+                                            <th>Local</th>
+                                            <th>Visitante</th>
+                                            <th>Resultado</th>
+                                            <th>Aciertos</th>
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var partido in partidosSinAciertos)
+                                        {
+                                            <tr>
+
+                                                <td>
+                                                    @partido.Local
+                                                </td>
+
+                                                <td>
+                                                    @partido.Visitante
+                                                </td>
+
+                                                <td>
+                                                    @partido.Resultado
+                                                </td>
+
+                                                <td>
+                                                    @partido.Aciertos
+                                                </td>
+
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <a class="btn btn-success"
+                               href="@ObtenerUrlDescargaPartidosSinAciertos()"
+                               download="ReportePartidosSinAciertos.csv">
+                                Descargar CSV
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                No existen partidos sin aciertos
+                                para generar este reporte.
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    private bool autorizado = false;
+
+    private List<Partido> partidos = new();
+
+    private List<Pronostico> pronosticos = new();
+
+    private PartidoController? partidoController;
+
+    private string mensaje = string.Empty;
+
+    private bool esError = false;
+
+    private ResultadoReporte? resultadoMasRepetido;
+
+    private PartidoAciertosReporte? partidoConMasAciertos;
+
+    private List<UsuarioAciertosReporte>
+        usuariosConMasAciertos = new();
+
+    private List<PartidoPronosticosReporte>
+        partidosConMasPronosticos = new();
+
+    private List<PartidoSinAciertosReporte>
+        partidosSinAciertos = new();
+
+    private double? promedioGoles;
+
+    private int partidosFinalizadosCantidad;
+
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (Session.UsuarioActual is null)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (Session.UsuarioActual.Rol != "Administrador")
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        autorizado = true;
+
+        CargarDatos();
+
+        StateHasChanged();
+    }
+
+
+    private void CargarDatos()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        try
+        {
+            // ==========================================
+            // PARTIDOS
+            // ==========================================
+
+            var partidoDataHandler =
+                new FileHandler<Partido>();
+
+            partidoController =
+                new PartidoController(partidoDataHandler);
+
+            var archivoPartidos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv"
+            );
+
+            partidos =
+                partidoController.Load(archivoPartidos);
+
+            if (partidos == null)
+            {
+                partidos = new List<Partido>();
+            }
+
+
+            // ==========================================
+            // PRONÓSTICOS
+            // ==========================================
+
+            var pronosticoDataHandler =
+                new FileHandler<Pronostico>();
+
+            var archivoPronosticos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Pronosticos.csv"
+            );
+
+            pronosticos =
+                pronosticoDataHandler.Load(archivoPronosticos);
+
+            if (pronosticos == null)
+            {
+                pronosticos = new List<Pronostico>();
+            }
+
+
+            // ==========================================
+            // REPORTES
+            // ==========================================
+
+            GenerarResultadoMasRepetido();
+
+            GenerarPartidoConMasAciertos();
+
+            GenerarUsuariosConMasAciertos();
+
+            GenerarPartidosConMasPronosticos();
+
+            GenerarPromedioGoles();
+
+            GenerarPartidosSinAciertos();
+        }
+        catch (Exception ex)
+        {
+            partidos = new List<Partido>();
+
+            pronosticos = new List<Pronostico>();
+
+            resultadoMasRepetido = null;
+
+            partidoConMasAciertos = null;
+
+            usuariosConMasAciertos =
+                new List<UsuarioAciertosReporte>();
+
+            partidosConMasPronosticos =
+                new List<PartidoPronosticosReporte>();
+
+            partidosSinAciertos =
+                new List<PartidoSinAciertosReporte>();
+
+            promedioGoles = null;
+
+            partidosFinalizadosCantidad = 0;
+
+            mensaje =
+                "No fue posible cargar los datos: "
+                + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // ==================================================
+    // REPORTE 1
+    // ==================================================
+
+    private void GenerarResultadoMasRepetido()
+    {
+        var partidosFinalizados = partidos
+            .Where(partido => partido.Finalizado)
+            .ToList();
+
+        if (partidosFinalizados.Count == 0)
+        {
+            resultadoMasRepetido = null;
+            return;
+        }
+
+        resultadoMasRepetido = partidosFinalizados
+            .GroupBy(partido =>
+                $"{partido.GolesLocal} - {partido.GolesVisitante}")
+            .Select(grupo => new ResultadoReporte
+            {
+                Resultado = grupo.Key,
+                Cantidad = grupo.Count()
+            })
+            .OrderByDescending(grupo => grupo.Cantidad)
+            .ThenBy(grupo => grupo.Resultado)
+            .FirstOrDefault();
+    }
+
+
+    // ==================================================
+    // REPORTE 2
+    // ==================================================
+
+    private void GenerarPartidoConMasAciertos()
+    {
+        var pronosticosConAcierto = pronosticos
+            .Where(pronostico => pronostico.Puntos > 0)
+            .ToList();
+
+        if (pronosticosConAcierto.Count == 0)
+        {
+            partidoConMasAciertos = null;
+            return;
+        }
+
+        partidoConMasAciertos = pronosticosConAcierto
+            .GroupBy(pronostico =>
+                new
+                {
+                    pronostico.Local,
+                    pronostico.Visitante
+                })
+            .Select(grupo => new PartidoAciertosReporte
+            {
+                Local = grupo.Key.Local,
+                Visitante = grupo.Key.Visitante,
+                Aciertos = grupo.Count()
+            })
+            .OrderByDescending(grupo => grupo.Aciertos)
+            .ThenBy(grupo => grupo.Local)
+            .ThenBy(grupo => grupo.Visitante)
+            .FirstOrDefault();
+    }
+
+
+    // ==================================================
+    // REPORTE 3
+    // ==================================================
+
+    private void GenerarUsuariosConMasAciertos()
+    {
+        usuariosConMasAciertos = pronosticos
+            .Where(pronostico => pronostico.Puntos > 0)
+            .GroupBy(pronostico =>
+                pronostico.NombreUsuario)
+            .Select(grupo => new UsuarioAciertosReporte
+            {
+                NombreUsuario = grupo.Key,
+                Aciertos = grupo.Count()
+            })
+            .OrderByDescending(usuario =>
+                usuario.Aciertos)
+            .ThenBy(usuario =>
+                usuario.NombreUsuario)
+            .ToList();
+    }
+
+
+    // ==================================================
+    // REPORTE 4
+    // ==================================================
+
+    private void GenerarPartidosConMasPronosticos()
+    {
+        if (pronosticos.Count == 0)
+        {
+            partidosConMasPronosticos =
+                new List<PartidoPronosticosReporte>();
+
+            return;
+        }
+
+        partidosConMasPronosticos = pronosticos
+            .GroupBy(pronostico =>
+                new
+                {
+                    pronostico.Local,
+                    pronostico.Visitante
+                })
+            .Select(grupo => new PartidoPronosticosReporte
+            {
+                Local = grupo.Key.Local,
+                Visitante = grupo.Key.Visitante,
+                Pronosticos = grupo.Count()
+            })
+            .OrderByDescending(grupo =>
+                grupo.Pronosticos)
+            .ThenBy(grupo =>
+                grupo.Local)
+            .ThenBy(grupo =>
+                grupo.Visitante)
+            .ToList();
+    }
+
+
+    // ==================================================
+    // REPORTE 5
+    // ==================================================
+
+    private void GenerarPromedioGoles()
+    {
+        var partidosFinalizados = partidos
+            .Where(partido => partido.Finalizado)
+            .ToList();
+
+        partidosFinalizadosCantidad =
+            partidosFinalizados.Count;
+
+        if (partidosFinalizados.Count == 0)
+        {
+            promedioGoles = null;
+            return;
+        }
+
+        var totalGoles = partidosFinalizados
+            .Sum(partido =>
+                partido.GolesLocal +
+                partido.GolesVisitante);
+
+        promedioGoles =
+            (double)totalGoles /
+            partidosFinalizados.Count;
+    }
+
+
+    // ==================================================
+    // REPORTE 6
+    // ==================================================
+
+    private void GenerarPartidosSinAciertos()
+    {
+        partidosSinAciertos =
+            new List<PartidoSinAciertosReporte>();
+
+        var partidosFinalizados = partidos
+            .Where(partido => partido.Finalizado)
+            .ToList();
+
+        foreach (var partido in partidosFinalizados)
+        {
+            var pronosticosPartido = pronosticos
+                .Where(pronostico =>
+                    pronostico.Local ==
+                    partido.Local.Nombre &&
+                    pronostico.Visitante ==
+                    partido.Visitante.Nombre)
+                .ToList();
+
+            var aciertos = pronosticosPartido
+                .Count(pronostico =>
+                    pronostico.Puntos > 0);
+
+            if (aciertos == 0)
+            {
+                partidosSinAciertos.Add(
+                    new PartidoSinAciertosReporte
+                    {
+                        Local = partido.Local.Nombre,
+                        Visitante = partido.Visitante.Nombre,
+                        Resultado =
+                            $"{partido.GolesLocal} - {partido.GolesVisitante}",
+                        Aciertos = 0
+                    });
+            }
+        }
+    }
+
+
+    // ==================================================
+    // DESCARGAS
+    // ==================================================
+
+    private string ObtenerUrlDescargaResultado()
+    {
+        if (resultadoMasRepetido == null)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Reporte,Resultado,Cantidad" +
+            Environment.NewLine +
+            $"Resultado más repetido,{resultadoMasRepetido.Resultado},{resultadoMasRepetido.Cantidad}" +
+            Environment.NewLine;
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string ObtenerUrlDescargaPartidoMasAciertos()
+    {
+        if (partidoConMasAciertos == null)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Reporte,Local,Visitante,Aciertos" +
+            Environment.NewLine +
+            $"Partido con más aciertos,{partidoConMasAciertos.Local},{partidoConMasAciertos.Visitante},{partidoConMasAciertos.Aciertos}" +
+            Environment.NewLine;
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string ObtenerUrlDescargaUsuariosMasAciertos()
+    {
+        if (usuariosConMasAciertos.Count == 0)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Posicion,Usuario,Aciertos" +
+            Environment.NewLine;
+
+        var posicion = 1;
+
+        foreach (var usuario in usuariosConMasAciertos.Take(5))
+        {
+            contenido +=
+                $"{posicion},{usuario.NombreUsuario},{usuario.Aciertos}" +
+                Environment.NewLine;
+
+            posicion++;
+        }
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string ObtenerUrlDescargaPartidosMasPronosticos()
+    {
+        if (partidosConMasPronosticos.Count == 0)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Posicion,Local,Visitante,Pronosticos" +
+            Environment.NewLine;
+
+        var posicion = 1;
+
+        foreach (var partido in partidosConMasPronosticos)
+        {
+            contenido +=
+                $"{posicion},{partido.Local},{partido.Visitante},{partido.Pronosticos}" +
+                Environment.NewLine;
+
+            posicion++;
+        }
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string ObtenerUrlDescargaPromedioGoles()
+    {
+        if (!promedioGoles.HasValue)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Reporte,PromedioGoles,PartidosAnalizados" +
+            Environment.NewLine +
+            $"Promedio de goles,{promedioGoles.Value.ToString("0.00")},{partidosFinalizadosCantidad}" +
+            Environment.NewLine;
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string ObtenerUrlDescargaPartidosSinAciertos()
+    {
+        if (partidosSinAciertos.Count == 0)
+        {
+            return "#";
+        }
+
+        var contenido =
+            "Local,Visitante,Resultado,Aciertos" +
+            Environment.NewLine;
+
+        foreach (var partido in partidosSinAciertos)
+        {
+            contenido +=
+                $"{partido.Local},{partido.Visitante},{partido.Resultado},{partido.Aciertos}" +
+                Environment.NewLine;
+        }
+
+        return CrearUrlCsv(contenido);
+    }
+
+
+    private string CrearUrlCsv(string contenido)
+    {
+        var bytes =
+            Encoding.UTF8.GetBytes(contenido);
+
+        var base64 =
+            Convert.ToBase64String(bytes);
+
+        return $"data:text/csv;base64,{base64}";
+    }
+
+
+    // ==================================================
+    // NAVEGACIÓN
+    // ==================================================
+
+    private void VolverAlPanel()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+
+    private void CerrarSesion()
+    {
+        Session.CerrarSesion();
+
+        Navigation.NavigateTo("/login");
+    }
+
+
+    // ==================================================
+    // CLASES AUXILIARES
+    // ==================================================
+
+    private class ResultadoReporte
+    {
+        public string Resultado { get; set; } = string.Empty;
+
+        public int Cantidad { get; set; }
+    }
+
+
+    private class PartidoAciertosReporte
+    {
+        public string Local { get; set; } = string.Empty;
+
+        public string Visitante { get; set; } = string.Empty;
+
+        public int Aciertos { get; set; }
+    }
+
+
+    private class UsuarioAciertosReporte
+    {
+        public string NombreUsuario { get; set; } = string.Empty;
+
+        public int Aciertos { get; set; }
+    }
+
+
+    private class PartidoPronosticosReporte
+    {
+        public string Local { get; set; } = string.Empty;
+
+        public string Visitante { get; set; } = string.Empty;
+
+        public int Pronosticos { get; set; }
+    }
+
+
+    private class PartidoSinAciertosReporte
+    {
+        public string Local { get; set; } = string.Empty;
+
+        public string Visitante { get; set; } = string.Empty;
+
+        public string Resultado { get; set; } = string.Empty;
+
+        public int Aciertos { get; set; }
+    }
+
+}
