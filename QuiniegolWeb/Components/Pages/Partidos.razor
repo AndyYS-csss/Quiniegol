@@ -191,6 +191,53 @@
                 }
 
 
+                @if (mostrarEdicion)
+                {
+                    <div class="card mb-4">
+
+                        <div class="card-body">
+
+                            <h4>Modificar fecha y hora</h4>
+
+                            @if (partidoEditando is not null)
+                            {
+                                <p>
+                                    <strong>
+                                        @partidoEditando.Local.Nombre
+                                        vs
+                                        @partidoEditando.Visitante.Nombre
+                                    </strong>
+                                </p>
+
+                                <div class="mb-3">
+
+                                    <label class="form-label">
+                                        Nueva fecha y hora
+                                    </label>
+
+                                    <input type="datetime-local"
+                                           class="form-control"
+                                           @bind="fechaEditada" />
+
+                                </div>
+
+                                <button class="btn btn-success me-2"
+                                        @onclick="GuardarModificacion">
+                                    Guardar cambios
+                                </button>
+
+                                <button class="btn btn-secondary"
+                                        @onclick="CancelarEdicion">
+                                    Cancelar
+                                </button>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+
                 @if (partidos.Count == 0)
                 {
                     <div class="alert alert-info">
@@ -212,6 +259,7 @@
                                     <th>Grupo</th>
                                     <th>Fecha</th>
                                     <th>Estado</th>
+                                    <th>Acciones</th>
                                 </tr>
 
                             </thead>
@@ -265,6 +313,15 @@
 
                                         </td>
 
+                                        <td>
+
+                                            <button class="btn btn-warning btn-sm"
+                                                    @onclick="() => MostrarEdicion(partido)">
+                                                Modificar
+                                            </button>
+
+                                        </td>
+
                                     </tr>
                                 }
 
@@ -297,6 +354,8 @@
 
     private bool mostrarFormulario = false;
 
+    private bool mostrarEdicion = false;
+
 
     // Datos del nuevo partido.
     private string nuevoLocal = string.Empty;
@@ -308,6 +367,12 @@
     private string nuevoGrupoVisitante = string.Empty;
 
     private DateTime nuevaFecha = DateTime.Now.AddDays(1);
+
+
+    // Datos del partido que se está modificando.
+    private Partido? partidoEditando;
+
+    private DateTime fechaEditada;
 
 
     protected override void OnAfterRender(bool firstRender)
@@ -346,13 +411,10 @@
 
         try
         {
-            // Creamos el manejador de archivos.
             var dataHandler = new FileHandler<Partido>();
 
-            // Creamos el controlador de partidos.
             partidoController = new PartidoController(dataHandler);
 
-            // Ubicamos el archivo Partidos.csv.
             var archivoPartidos = Path.Combine(
                 AppContext.BaseDirectory,
                 "..",
@@ -364,7 +426,6 @@
                 "Partidos.csv"
             );
 
-            // Cargamos los partidos.
             partidos = partidoController.Load(archivoPartidos);
 
             if (partidos == null)
@@ -399,7 +460,7 @@
     }
 
 
-    // Cancelar el formulario.
+    // Cancelar el formulario de agregar.
     private void CancelarFormulario()
     {
         mostrarFormulario = false;
@@ -415,7 +476,6 @@
         mensaje = string.Empty;
         esError = false;
 
-        // Validamos el equipo local.
         if (string.IsNullOrWhiteSpace(nuevoLocal))
         {
             mensaje = "Debe indicar el equipo local.";
@@ -423,7 +483,6 @@
             return;
         }
 
-        // Validamos el grupo local.
         if (string.IsNullOrWhiteSpace(nuevoGrupoLocal))
         {
             mensaje = "Debe indicar el grupo local.";
@@ -431,7 +490,6 @@
             return;
         }
 
-        // Validamos el equipo visitante.
         if (string.IsNullOrWhiteSpace(nuevoVisitante))
         {
             mensaje = "Debe indicar el equipo visitante.";
@@ -439,7 +497,6 @@
             return;
         }
 
-        // Validamos el grupo visitante.
         if (string.IsNullOrWhiteSpace(nuevoGrupoVisitante))
         {
             mensaje = "Debe indicar el grupo visitante.";
@@ -447,7 +504,6 @@
             return;
         }
 
-        // Validamos que no sea el mismo equipo.
         if (nuevoLocal.Trim().Equals(
             nuevoVisitante.Trim(),
             StringComparison.OrdinalIgnoreCase))
@@ -457,10 +513,8 @@
             return;
         }
 
-
         try
         {
-            // Ubicamos el archivo Partidos.csv.
             var archivoPartidos = Path.Combine(
                 AppContext.BaseDirectory,
                 "..",
@@ -472,7 +526,6 @@
                 "Partidos.csv"
             );
 
-            // Creamos el nuevo partido.
             var nuevoPartido = new Partido(
                 new Seleccion(
                     nuevoLocal.Trim(),
@@ -485,7 +538,6 @@
                 nuevaFecha
             );
 
-            // Formato utilizado por Partidos.csv.
             var linea = string.Join(
                 ",",
                 nuevoPartido.Local.Nombre,
@@ -495,25 +547,148 @@
                 nuevoPartido.Fecha.ToString("yyyy-MM-dd HH:mm:ss")
             );
 
-            // Agregamos el partido al archivo.
             File.AppendAllText(
                 archivoPartidos,
                 Environment.NewLine + linea
             );
 
-            // Actualizamos la lista que se muestra en pantalla.
             partidos.Add(nuevoPartido);
 
-            mensaje = $"El partido {nuevoLocal} vs {nuevoVisitante} fue agregado correctamente.";
+            mensaje =
+                $"El partido {nuevoLocal} vs {nuevoVisitante} fue agregado correctamente.";
 
             mostrarFormulario = false;
         }
         catch (Exception ex)
         {
-            mensaje = "No fue posible agregar el partido: " + ex.Message;
+            mensaje =
+                "No fue posible agregar el partido: " + ex.Message;
 
             esError = true;
         }
+    }
+
+
+    // Mostrar el formulario para modificar la fecha.
+    private void MostrarEdicion(Partido partido)
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        partidoEditando = partido;
+
+        fechaEditada = partido.Fecha;
+
+        mostrarEdicion = true;
+
+        mostrarFormulario = false;
+    }
+
+
+    // Cancelar la modificación.
+    private void CancelarEdicion()
+    {
+        partidoEditando = null;
+
+        mostrarEdicion = false;
+
+        mensaje = string.Empty;
+        esError = false;
+    }
+
+
+    // Guardar la modificación de fecha y hora.
+    private void GuardarModificacion()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (partidoEditando is null)
+        {
+            mensaje = "No hay ningún partido seleccionado.";
+            esError = true;
+            return;
+        }
+
+        try
+        {
+            if (partidoController is null)
+            {
+                mensaje = "No se pudo acceder al controlador de partidos.";
+                esError = true;
+                return;
+            }
+
+            bool actualizado = partidoController.UpdateDate(
+                partidoEditando.Local.Nombre,
+                partidoEditando.Visitante.Nombre,
+                fechaEditada
+            );
+
+            if (!actualizado)
+            {
+                mensaje = "No fue posible modificar el partido.";
+                esError = true;
+                return;
+            }
+
+            var archivoPartidos = Path.Combine(
+                AppContext.BaseDirectory,
+                "..",
+                "..",
+                "..",
+                "..",
+                "Quiniegol",
+                "Data",
+                "Partidos.csv"
+            );
+
+            GuardarPartidosEnArchivo(archivoPartidos);
+
+            mensaje =
+                $"La fecha del partido {partidoEditando.Local.Nombre} vs {partidoEditando.Visitante.Nombre} fue modificada correctamente.";
+
+            mostrarEdicion = false;
+
+            partidoEditando = null;
+        }
+        catch (Exception ex)
+        {
+            mensaje =
+                "No fue posible modificar el partido: " + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // Guarda todos los partidos nuevamente en Partidos.csv.
+    private void GuardarPartidosEnArchivo(string archivoPartidos)
+    {
+        var lineas = new List<string>();
+
+        lineas.Add(
+            "Local,GrupoLocal,Visitante,GrupoVisitante,Fecha"
+        );
+
+        foreach (var partido in partidos)
+        {
+            lineas.Add(
+                string.Join(
+                    ",",
+                    partido.Local.Nombre,
+                    partido.Local.Grupo,
+                    partido.Visitante.Nombre,
+                    partido.Visitante.Grupo,
+                    partido.Fecha.ToString("yyyy-MM-dd HH:mm:ss")
+                )
+            );
+        }
+
+        File.WriteAllLines(
+            archivoPartidos,
+            lineas
+        );
     }
 
 

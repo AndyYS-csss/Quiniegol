@@ -1,5 +1,6 @@
 ﻿using QuiniegolController.Abstractions;
 using QuiniegolModels;
+using System;
 using System.Collections.Generic;
 
 namespace QuiniegolController
@@ -63,6 +64,33 @@ namespace QuiniegolController
                 partido =>
                     partido.Local.Nombre == local &&
                     partido.Visitante.Nombre == visitante);
+        }
+
+        /// <summary>
+        /// Actualiza la fecha y hora programada de un partido.
+        /// </summary>
+        /// <param name="local">Nombre de la selección local.</param>
+        /// <param name="visitante">Nombre de la selección visitante.</param>
+        /// <param name="nuevaFecha">Nueva fecha y hora del partido.</param>
+        /// <returns>
+        /// True si la fecha fue actualizada correctamente;
+        /// de lo contrario, false.
+        /// </returns>
+        public bool UpdateDate(
+            string local,
+            string visitante,
+            DateTime nuevaFecha)
+        {
+            var partido = this.FindMatch(local, visitante);
+
+            if (partido == null)
+            {
+                return false;
+            }
+
+            partido.Fecha = nuevaFecha;
+
+            return true;
         }
 
         /// <summary>
