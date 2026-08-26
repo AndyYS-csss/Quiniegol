@@ -128,5 +128,28 @@ namespace QuiniegolController
 
             return true;
         }
+
+        /// <summary>
+        /// Elimina un partido de la lista de partidos.
+        /// </summary>
+        /// <param name="local">Nombre de la selección local.</param>
+        /// <param name="visitante">Nombre de la selección visitante.</param>
+        /// <returns>
+        /// True si el partido fue eliminado;
+        /// de lo contrario, false.
+        /// </returns>
+        public bool DeleteMatch(
+            string local,
+            string visitante)
+        {
+            var partido = this.FindMatch(local, visitante);
+
+            if (partido == null)
+            {
+                return false;
+            }
+
+            return this.Partidos.Remove(partido);
+        }
     }
 }

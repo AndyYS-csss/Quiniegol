@@ -305,6 +305,38 @@
                 }
 
 
+                @if (mostrarConfirmacionEliminar)
+                {
+                    <div class="alert alert-danger">
+
+                        <h5>Confirmar eliminación</h5>
+
+                        @if (partidoEliminar is not null)
+                        {
+                            <p>
+                                ¿Está seguro de que desea eliminar el partido
+                                <strong>
+                                    @partidoEliminar.Local.Nombre
+                                    vs
+                                    @partidoEliminar.Visitante.Nombre
+                                </strong>?
+                            </p>
+
+                            <button class="btn btn-danger me-2"
+                                    @onclick="ConfirmarEliminacion">
+                                Sí, eliminar
+                            </button>
+
+                            <button class="btn btn-secondary"
+                                    @onclick="CancelarEliminacion">
+                                Cancelar
+                            </button>
+                        }
+
+                    </div>
+                }
+
+
                 @if (partidos.Count == 0)
                 {
                     <div class="alert alert-info">
@@ -408,11 +440,16 @@
 
                                             @if (!partido.Finalizado)
                                             {
-                                                <button class="btn btn-success btn-sm"
+                                                <button class="btn btn-success btn-sm me-1"
                                                         @onclick="() => MostrarResultado(partido)">
                                                     Resultado
                                                 </button>
                                             }
+
+                                            <button class="btn btn-danger btn-sm"
+                                                    @onclick="() => MostrarConfirmacionEliminar(partido)">
+                                                Eliminar
+                                            </button>
 
                                         </td>
 
@@ -452,6 +489,8 @@
 
     private bool mostrarResultado = false;
 
+    private bool mostrarConfirmacionEliminar = false;
+
 
     // Datos del nuevo partido.
     private string nuevoLocal = string.Empty;
@@ -477,6 +516,10 @@
     private int golesLocalResultado = 0;
 
     private int golesVisitanteResultado = 0;
+
+
+    // Partido seleccionado para eliminar.
+    private Partido? partidoEliminar;
 
 
     protected override void OnAfterRender(bool firstRender)
@@ -622,6 +665,7 @@
 
         mostrarEdicion = false;
         mostrarResultado = false;
+        mostrarConfirmacionEliminar = false;
     }
 
 
@@ -682,16 +726,7 @@
 
         try
         {
-            var archivoPartidos = Path.Combine(
-                AppContext.BaseDirectory,
-                "..",
-                "..",
-                "..",
-                "..",
-                "Quiniegol",
-                "Data",
-                "Partidos.csv"
-            );
+            var archivoPartidos = ObtenerRutaPartidos();
 
             var nuevoPartido = new Partido(
                 new Seleccion(
@@ -754,6 +789,7 @@
 
         mostrarFormulario = false;
         mostrarResultado = false;
+        mostrarConfirmacionEliminar = false;
     }
 
 
@@ -846,6 +882,7 @@
 
         mostrarFormulario = false;
         mostrarEdicion = false;
+        mostrarConfirmacionEliminar = false;
     }
 
 
@@ -928,6 +965,103 @@
         {
             mensaje =
                 "No fue posible guardar el resultado: " + ex.Message;
+
+            esError = true;
+        }
+    }
+
+
+    // Mostrar confirmación para eliminar un partido.
+    private void MostrarConfirmacionEliminar(Partido partido)
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        partidoEliminar = partido;
+
+        mostrarConfirmacionEliminar = true;
+
+        mostrarFormulario = false;
+        mostrarEdicion = false;
+        mostrarResultado = false;
+    }
+
+
+    // Cancelar la eliminación.
+    private void CancelarEliminacion()
+    {
+        partidoEliminar = null;
+
+        mostrarConfirmacionEliminar = false;
+
+        mensaje = string.Empty;
+        esError = false;
+    }
+
+
+    // Confirmar y ejecutar la eliminación.
+    private void ConfirmarEliminacion()
+    {
+        mensaje = string.Empty;
+        esError = false;
+
+        if (partidoEliminar is null)
+        {
+            mensaje =
+                "No hay ningún partido seleccionado para eliminar.";
+
+            esError = true;
+            return;
+        }
+
+        try
+        {
+            if (partidoController is null)
+            {
+                mensaje =
+                    "No se pudo acceder al controlador de partidos.";
+
+                esError = true;
+                return;
+            }
+
+            string local =
+                partidoEliminar.Local.Nombre;
+
+            string visitante =
+                partidoEliminar.Visitante.Nombre;
+
+            bool eliminado =
+                partidoController.DeleteMatch(
+                    local,
+                    visitante);
+
+            if (!eliminado)
+            {
+                mensaje =
+                    "No fue posible eliminar el partido.";
+
+                esError = true;
+                return;
+            }
+
+            partidos.Remove(partidoEliminar);
+
+            var archivoPartidos = ObtenerRutaPartidos();
+
+            GuardarPartidosEnArchivo(archivoPartidos);
+
+            mensaje =
+                $"El partido {local} vs {visitante} fue eliminado correctamente.";
+
+            partidoEliminar = null;
+
+            mostrarConfirmacionEliminar = false;
+        }
+        catch (Exception ex)
+        {
+            mensaje =
+                "No fue posible eliminar el partido: " + ex.Message;
 
             esError = true;
         }
